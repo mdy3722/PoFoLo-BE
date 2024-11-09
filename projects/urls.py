@@ -6,10 +6,10 @@ from .views import (
 
 urlpatterns = [
     path('projects/', ProjectListView.as_view(), name='project-list'),
-    path('project/<int:pk>/', ProjectDetailView.as_view(), name='project-detail'),
-    # path('project/', ProjectCreateView.as_view(), name='project-create'),
-    # path('project/<int:pk>/', ProjectUpdateDeleteView.as_view(), name='project-update-delete'),
-    # path('users/project/myproject/', MyProjectsView.as_view(), name='my-projects'),
-    # path('users/project/liked/', LikeProjectView.as_view(), name='liked-projects'),
-    # path('users/project/commented/', CommentProjectView.as_view(), name='commented-projects'),
+    path('projects/<int:pk>/', ProjectDetailView.as_view(), name='project-detail'),
+    # path('projects/', ProjectCreateView.as_view(), name='project-create'),
+    # path('projects/<int:pk>/', ProjectUpdateDeleteView.as_view(), name='project-update-delete'),
+    # path('users/projects/myproject/', MyProjectsView.as_view(), name='my-projects'),
+    # path('users/projects/liked/', LikeProjectView.as_view(), name='liked-projects'),
+    # path('users/projects/commented/', CommentProjectView.as_view(), name='commented-projects'),
 ]
