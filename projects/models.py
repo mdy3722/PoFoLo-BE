@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ValidationError
-#from django.contrib.auth.models import User, Comment
+from django.contrib.auth.models import User#, Comment
 
 class Tag(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -24,7 +24,7 @@ class Project(models.Model):
     liked_count = models.IntegerField(default=0)
     comment_count = models.IntegerField(default=0)
     views = models.IntegerField(default=0) #조회수 
-    #writer = models.ForeignKey(User, on_delete=models.CASCADE)
+    writer = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def clean(self):
         if len(self.image_urls) > 10:
