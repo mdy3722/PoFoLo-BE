@@ -17,7 +17,7 @@ class Project(models.Model):
     tags = models.ManyToManyField(Tag, related_name="projects")
     skills = models.ManyToManyField(Skill, related_name="projects")
     links = models.JSONField()
-    picture_urls = models.JSONField()
+    picture_urls = models.JSONField(default=['']) #FIX - default img 넣어야함 !
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_public = models.BooleanField(default=True)
@@ -36,6 +36,11 @@ class Project(models.Model):
     class Meta:
         db_table = 'projects'
 
+# 이미지 관리 class
+class TemporaryImage(models.Model):
+    image_url = models.URLField()
+    session_key = models.CharField(max_length=100)  # 세션별로 이미지 그룹화
+    uploaded_at = models.DateTimeField(auto_now_add=True)
 
 class Like(models.Model):
     #user = models.ForeignKey(User, on_delete=models.CASCADE)
