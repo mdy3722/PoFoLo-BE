@@ -22,3 +22,21 @@ class ProjectDetailView(generics.RetrieveAPIView):
     queryset = Project.objects.all()
     serializer_class = ProjectDetailSerializer
     lookup_field = 'pk'
+
+# - 프로젝트 생성
+class ProjectCreateView(generics.CreateAPIView):
+    serializer_class = ProjectDetailSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(writer=self.request.user) #해당 사용자를 작성자(writer)로 지정
+
+# - 프로젝트 수정/삭제
+class ProjectUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Project.objects.all()
+    serializer_class = ProjectDetailSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'pk'
+
+    def perform_update(self, serializer):
+        serializer.save()

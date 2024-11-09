@@ -18,6 +18,9 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
         model = Project
         fields = ['writer', 'project_id', 'title', 'description', 'major_field', 'sub_field','tags', 'skills', 'links', 
                 'image_urls', 'created_at', 'is_public', 'liked_count', 'comment_count', 'views']
+        read_only_fields = ['writer', 'created_at', 'liked_count', 'comment_count', 'views']
+        # - 변경 불가 항목들
+
     
     def validate_title(self, value):
         if not value:
