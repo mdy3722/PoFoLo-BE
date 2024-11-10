@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Project, Like, Comment
+from .models import Project, TemporaryImage, Like, Comment
 
 class ProjectListSerializer(serializers.ModelSerializer):
     thumbnail = serializers.SerializerMethodField()
@@ -18,6 +18,9 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
         model = Project
         fields = ['writer', 'project_id', 'title', 'description', 'major_field', 'sub_field','tags', 'skills', 'links', 
                 'image_urls', 'created_at', 'is_public', 'liked_count', 'comment_count', 'views']
+        read_only_fields = ['writer', 'created_at', 'liked_count', 'comment_count', 'views']
+        # - 변경 불가 항목들
+
     
     def validate_title(self, value):
         if not value:
@@ -33,8 +36,14 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
         if not value:
             raise serializers.ValidationError("Field is required.")
         return value
+    
+    def create(self, validated_data):
+        session_key = self.context['request'].data.get('session_key') # 세션 키로 TemporaryImage 가져오기
 
-    def validate_picture_urls(self, value):
-        if len(value) > 10:
-            raise serializers.ValidationError("You can upload a maximum of 10 images!!")
-        return value
+        if session_key:
+            temporary_images = TemporaryImage.objects.filter(session_key=session_key)
+            picture_urls = [img.image_url for img in temporary_images]
+            validated_data['picture_urls'] = picture_urls[:10]  # 최대 10개
+            temporary_images.delete() # default 이미지 삭제
+
+        return super().create(validated_data)
