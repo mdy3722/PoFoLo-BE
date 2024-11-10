@@ -1,7 +1,8 @@
 from django.db import models
 from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ValidationError
-from django.contrib.auth.models import User#, Comment
+from users.models import PofoloUser
+from comments.models import Comment
 
 class Tag(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -24,7 +25,7 @@ class Project(models.Model):
     liked_count = models.IntegerField(default=0)
     comment_count = models.IntegerField(default=0)
     views = models.IntegerField(default=0) #조회수 
-    writer = models.ForeignKey(User, on_delete=models.CASCADE)
+    writer = models.ForeignKey(PofoloUser, on_delete=models.CASCADE)
 
     def clean(self):
         if len(self.image_urls) > 10:
@@ -43,6 +44,6 @@ class TemporaryImage(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
 class Like(models.Model):
-    #user = models.ForeignKey(User, on_delete=models.CASCADE)
+    #user = models.ForeignKey(PofoloUser, on_delete=models.CASCADE)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="likes")
     liked_at = models.DateTimeField(auto_now_add=True)

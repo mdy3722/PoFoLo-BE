@@ -7,8 +7,7 @@ class Comment(models.Model):
     writer = models.ForeignKey(PofoloUser, on_delete=models.CASCADE, related_name="comments")  # 댓글 작성자
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="comments")
     commented_at = models.DateTimeField(auto_now_add=True)
-    text = models.TextField()
-    # is_reply = models.BooleanField(default=False)   # 답글 여부
+    text = models.TextField()  
     parent_comment = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name="replies") # 답글은 부모 댓글과 연결 됨. 일종의 상속 개념
 
     def __str__(self):
