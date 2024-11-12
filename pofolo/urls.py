@@ -21,4 +21,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 
     path('pofolo/users/', include('users.urls')),
+    path('pofolo/projects/', include('projects.urls')),  # projects 앱의 URL 패턴 포함
 ]

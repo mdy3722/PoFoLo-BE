@@ -13,8 +13,8 @@ class Skill(models.Model):
 class Project(models.Model):
     title = models.CharField(max_length=50, blank=False, null=False)
     description = models.TextField(max_length=200, blank=False, null=False)
-    major_field = models.CharField(blank=False, null=False) #대분류 - plan, design, develop
-    sub_field = models.CharField(blank=False, null=False) #소분류 
+    major_field = models.CharField(max_length=100, blank=False, null=False) #대분류 - plan, design, develop + CharField에 max_length 설정 필수!
+    sub_field = models.CharField(max_length=100, blank=False, null=False) #소분류 
     tags = models.ManyToManyField(Tag, related_name="projects")
     skills = models.ManyToManyField(Skill, related_name="projects")
     links = models.JSONField()

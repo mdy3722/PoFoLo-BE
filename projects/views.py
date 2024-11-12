@@ -1,10 +1,16 @@
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from .models import Project, TemporaryImage
 from .serializers import ProjectListSerializer, ProjectDetailSerializer
 from django.contrib.sessions.backends.db import SessionStore
+
+
+"""링크 title 태그 반환을 위한 import"""
+import requests
+from bs4 import BeautifulSoup
+from django.http import JsonResponse
 
 # Main Page
 # - 프로젝트 목록 조회
@@ -56,3 +62,31 @@ class ProjectUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_update(self, serializer):
         serializer.save()
+
+
+
+
+
+"""link의 title 반환 로직"""
+class LinkTitleView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        link = request.data.get('link')
+        
+        if not link:
+            return JsonResponse({'error': 'URL is required.'}, status=400)
+        
+        try:
+            # URL로 HTML 가져오기
+            response = requests.get(link)
+            response.raise_for_status()  # HTTP 오류 확인
+
+            # HTML 파싱
+            soup = BeautifulSoup(response.text, 'html.parser')
+            title = soup.title.string if soup.title else 'No Title Found'
+
+            return JsonResponse({'title': title})
+        
+        except requests.RequestException as e:
+            return JsonResponse({'error': str(e)}, status=400)
