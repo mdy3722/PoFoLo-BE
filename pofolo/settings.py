@@ -60,7 +60,6 @@ INSTALLED_APPS = [
     'users',
     'projects',
     'portfolios',
-    'comments',
 ]
 
 # JWT 유효성 검사를 위한 설정
