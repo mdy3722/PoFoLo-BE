@@ -121,3 +121,23 @@ class CommentCreateView(APIView):
             serializer.save(writer=request.writer, project=project, parent_comment=parent_comment)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+"""댓글 삭제 기능"""
+class CommentDeleteView(APIView):
+    permission_classes = [IsAuthenticated] 
+
+    def delete(self, request, comment_id):
+        # 댓글 인스턴스 가져오기
+        try:
+            comment = Comment.objects.get(id=comment_id)
+        except Comment.DoesNotExist:
+            return Response({"error": "Comment not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # 요청한 사용자가 댓글 작성자인지 확인
+        if comment.writer != request.user:
+            return Response({"error": "You do not have permission to delete this comment"}, status=status.HTTP_403_FORBIDDEN)
+
+        # 댓글 삭제
+        comment.delete()
+        return Response({"message": "Comment deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+    
