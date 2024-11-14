@@ -2,10 +2,9 @@ from django.urls import path
 from .views import (
    ProjectListView, ProjectDetailView,
    ProjectCreateView, ProjectUpdateDeleteView, ProjectImageUploadView,
-   LinkTitleView,
+   LinkTitleView, CommentCreateView,
 #   MyProjectsView, LikeProjectView, CommentProjectView
 )
-from comments.views import CommentCreateView
 
 urlpatterns = [
     path('', ProjectListView.as_view(), name='project-list'),#프로젝트 리스트 조회

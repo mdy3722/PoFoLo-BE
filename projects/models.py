@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ValidationError
 from users.models import PofoloUser
-from comments.models import Comment
 
 class Tag(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -47,3 +46,19 @@ class Like(models.Model):
     #user = models.ForeignKey(PofoloUser, on_delete=models.CASCADE)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="likes")
     liked_at = models.DateTimeField(auto_now_add=True)
+
+
+
+
+
+
+"""댓글 모델"""
+class Comment(models.Model):
+    writer = models.ForeignKey(PofoloUser, on_delete=models.CASCADE, related_name="comments")  # 댓글 작성자
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="comments")
+    commented_at = models.DateTimeField(auto_now_add=True)
+    text = models.TextField()  
+    parent_comment = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name="replies") # 답글은 부모 댓글과 연결 됨. 일종의 상속 개념
+
+    def __str__(self):
+        return f"{self.writer.nickname} - {self.text[:20]}"
