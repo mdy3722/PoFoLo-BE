@@ -56,3 +56,28 @@ class ProjectUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
 
     def perform_update(self, serializer):
         serializer.save()
+
+# MyPage
+# - 내 프로젝트 조회
+class MyProjectsView(generics.ListAPIView):
+    serializer_class = ProjectListSerializer
+
+    def get_queryset(self):
+        queryset = Project.objects.filter(is_public=True)
+        return queryset
+
+# - 좋아요한 프로젝트 조회
+class LikedProjectView(generics.ListAPIView):
+    serializer_class = ProjectListSerializer
+
+    def get_queryset(self):
+        queryset = Project.objects.filter(is_public=True)
+        return queryset
+
+# - 코멘트한 프로젝트 조회
+class CommentedProjectView(generics.ListAPIView):
+    serializer_class = ProjectListSerializer
+
+    def get_queryset(self):
+        queryset = Project.objects.filter(is_public=True)
+        return queryset
