@@ -2,7 +2,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
-from .models import Project, TemporaryImage, Comment
+from .models import Project, TemporaryImage, Comment, Like
 from .serializers import ProjectListSerializer, ProjectDetailSerializer, CommentSerializer
 from django.contrib.sessions.backends.db import SessionStore
 
@@ -63,10 +63,6 @@ class ProjectUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     def perform_update(self, serializer):
         serializer.save()
 
-
-
-
-
 """link의 title 반환 로직"""
 class LinkTitleView(APIView):
     permission_classes = [AllowAny]    # AllowAny는 로컬테스트용. 나중에 IsAuthenticated으로 수정 해야 함
@@ -90,10 +86,6 @@ class LinkTitleView(APIView):
         
         except requests.RequestException as e:
             return JsonResponse({'error': str(e)}, status=400)
-        
-
-
-
 
 """댓글 및 답글 작성하기"""
 class CommentCreateView(APIView):
@@ -141,29 +133,29 @@ class CommentDeleteView(APIView):
         comment.delete()
         return Response({"message": "Comment deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
     
-
-
 # MyPage
 # - 내 프로젝트 조회
 class MyProjectsView(generics.ListAPIView):
     serializer_class = ProjectListSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        queryset = Project.objects.filter(is_public=True)
-        return queryset
+        return Project.objects.filter(writer=self.request.user)
 
 # - 좋아요한 프로젝트 조회
 class LikedProjectView(generics.ListAPIView):
     serializer_class = ProjectListSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        queryset = Project.objects.filter(is_public=True)
-        return queryset
+        liked_projects = Like.objects.filter(user=self.request.user).values_list('project', flat=True)
+        return Project.objects.filter(id__in=liked_projects)
 
 # - 코멘트한 프로젝트 조회
 class CommentedProjectView(generics.ListAPIView):
     serializer_class = ProjectListSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        queryset = Project.objects.filter(is_public=True)
-        return queryset
+        commented_projects = Comment.objects.filter(writer=self.request.user).values_list('project', flat=True)
+        return Project.objects.filter(id__in=commented_projects)

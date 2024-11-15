@@ -43,16 +43,10 @@ class TemporaryImage(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
 class Like(models.Model):
-    #user = models.ForeignKey(PofoloUser, on_delete=models.CASCADE)
+    user = models.ForeignKey(PofoloUser, on_delete=models.CASCADE)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="likes")
     liked_at = models.DateTimeField(auto_now_add=True)
 
-
-
-
-
-
-"""댓글 모델"""
 class Comment(models.Model):
     writer = models.ForeignKey(PofoloUser, on_delete=models.CASCADE, related_name="comments")  # 댓글 작성자
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="comments")
