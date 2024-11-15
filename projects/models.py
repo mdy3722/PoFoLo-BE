@@ -17,7 +17,7 @@ class Project(models.Model):
     tags = models.ManyToManyField(Tag, related_name="projects")
     skills = models.ManyToManyField(Skill, related_name="projects")
     links = models.JSONField()
-    picture_urls = models.JSONField(default=['']) #FIX - default img 넣어야함 !
+    picture_urls = models.JSONField(default=dict) #FIX - default img 넣어야함 !
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_public = models.BooleanField(default=True)
