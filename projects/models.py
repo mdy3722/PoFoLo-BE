@@ -3,19 +3,13 @@ from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ValidationError
 from users.models import PofoloUser
 
-class Tag(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-
-class Skill(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-
 class Project(models.Model):
     title = models.CharField(max_length=50, blank=False, null=False)
     description = models.TextField(max_length=200, blank=False, null=False)
     major_field = models.CharField(max_length=100, blank=False, null=False) #대분류 - plan, design, develop + CharField에 max_length 설정 필수!
     sub_field = models.CharField(max_length=100, blank=False, null=False) #소분류 
-    tags = models.ManyToManyField(Tag, related_name="projects")
-    skills = models.ManyToManyField(Skill, related_name="projects")
+    tags = models.JSONField(default=list)
+    skills = models.JSONField(default=list)
     links = models.JSONField()
     picture_urls = models.JSONField(default=dict) #FIX - default img 넣어야함 !
     created_at = models.DateTimeField(auto_now_add=True)
@@ -27,7 +21,7 @@ class Project(models.Model):
     writer = models.ForeignKey(PofoloUser, on_delete=models.CASCADE)
 
     def clean(self):
-        if len(self.image_urls) > 10:
+        if len(self.picture_urls) > 10:
             raise ValidationError("uploaded more than 10 images.")
     
     def __str__(self):
