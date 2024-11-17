@@ -6,7 +6,7 @@ class ProjectListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        fields = ['writer', 'title', 'major_field', 'sub_field',
+        fields = ['id', 'writer', 'title', 'major_field', 'sub_field',
         'liked_count', 'comment_count', 'thumbnail', 'created_at']
 
     def get_thumbnail(self, obj):
@@ -16,9 +16,9 @@ class ProjectListSerializer(serializers.ModelSerializer):
 class ProjectDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
-        fields = ['writer', 'title', 'description', 'major_field', 'sub_field','tags', 'skills', 'links', 
+        fields = ['id', 'writer', 'title', 'description', 'major_field', 'sub_field','tags', 'skills', 'links', 
                 'picture_urls', 'created_at', 'is_public', 'liked_count', 'comment_count', 'views']
-        read_only_fields = ['writer', 'created_at', 'liked_count', 'comment_count', 'views']
+        read_only_fields = ['id', 'writer', 'created_at', 'liked_count', 'comment_count', 'views']
         # - 변경 불가 항목들
 
     

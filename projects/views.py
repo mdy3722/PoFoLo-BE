@@ -2,9 +2,12 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
-from .models import Project, TemporaryImage, Comment, Like
+from .models import Project, TemporaryImage, Comment, Like, PofoloUser
 from .serializers import ProjectListSerializer, ProjectDetailSerializer, CommentSerializer
 from django.contrib.sessions.backends.db import SessionStore
+from django.core.exceptions import ValidationError 
+from django.shortcuts import get_object_or_404
+
 
 
 """링크 title 태그 반환을 위한 import"""
@@ -36,8 +39,12 @@ class ProjectCreateView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(writer=self.request.user) #해당 사용자를 작성자(writer)로 지정
+        try:
+            pofolo_user = get_object_or_404(PofoloUser, user=self.request.user)
+            serializer.save(writer=pofolo_user) # writer를 PofoloUser로 설정
 
+        except AttributeError:
+            raise ValidationError("The user does not have a linked PofoloUser instance.")
 
 # - 프로젝트 이미지 추가
 class ProjectImageUploadView(APIView):
