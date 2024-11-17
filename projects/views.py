@@ -64,6 +64,28 @@ class ProjectImageUploadView(APIView):
 
         return Response({"message": "Images uploaded successfully.", "session_key": session_key}, status=status.HTTP_201_CREATED)
 
+# - 좋아요 누르기
+class LikeProjectView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, project_id):
+        user = get_object_or_404(PofoloUser, user=self.request.user)
+        project = get_object_or_404(Project, id=project_id)
+
+        like_instance = Like.objects.filter(user=user, project=project).first()
+        if like_instance:
+            # 이미 좋아요가 눌러진 상태
+            like_instance.delete()
+            project.liked_count -= 1
+            project.save()
+            return Response({"message": "Like removed"}, status=status.HTTP_200_OK)
+        else:
+            # 좋아요가 눌러지지 않은 상태
+            Like.objects.create(user=user, project=project)
+            project.liked_count += 1
+            project.save()
+            return Response({"message": "Like added"}, status=status.HTTP_201_CREATED)
+    
 """link의 title 반환 로직"""
 class LinkTitleView(APIView):
     permission_classes = [AllowAny]    # AllowAny는 로컬테스트용. 나중에 IsAuthenticated으로 수정 해야 함
