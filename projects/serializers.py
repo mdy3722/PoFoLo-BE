@@ -1,5 +1,7 @@
 from rest_framework import serializers
-from .models import Project, TemporaryImage, Like, Comment
+from .models import Project, TemporaryImage, Like, Comment, PofoloUser
+from django.shortcuts import get_object_or_404
+
 
 class ProjectListSerializer(serializers.ModelSerializer):
     thumbnail = serializers.SerializerMethodField()
@@ -59,9 +61,10 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ['id', 'writer', 'project', 'commented_at', 'text', 'parent_comment']
-        read_only_fields = ['writer', 'commented_at'] # 작성자, 작성시간 수정 불가
+        read_only_fields = ['writer', 'commented_at', 'project'] # 작성자, 작성시간 수정 불가
     
     def create(self, validated_data):
-        request = self.context.get("request")
-        validated_data['writer'] = request.writer
+        request = self.context.get('request')
+        user = get_object_or_404(PofoloUser, user=request.user)
+        validated_data['writer'] = user
         return super().create(validated_data)

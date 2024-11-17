@@ -109,9 +109,15 @@ class CommentCreateView(APIView):
                 return Response({"error": "Parent comment not found"}, status=status.HTTP_404_NOT_FOUND)
 
         # 댓글 데이터를 시리얼라이저로 전달
-        serializer = CommentSerializer(data=request.data)
+        serializer = CommentSerializer(
+            data=request.data,
+            context={
+                'request': request,  # request 객체 전달
+            }
+        )
         if serializer.is_valid():
-            serializer.save(writer=request.writer, project=project, parent_comment=parent_comment)
+            user = get_object_or_404(PofoloUser, user=request.user)
+            serializer.save(writer=user, project=project, parent_comment=parent_comment)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
