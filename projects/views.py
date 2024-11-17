@@ -33,7 +33,13 @@ class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ProjectDetailSerializer
     permission_classes = [permissions.IsAuthenticated]
     lookup_field = 'pk'
-    
+
+    def get_object(self):
+        project = super().get_object()
+        project.views += 1 #GET 요청시 조회수 증가 
+        project.save()
+        return project
+
     def perform_update(self, serializer):
         serializer.save()
 
