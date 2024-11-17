@@ -21,6 +21,11 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'writer', 'created_at', 'liked_count', 'comment_count', 'views']
         # - 변경 불가 항목들
 
+    def get_object(self):
+        project = super().get_object()
+        project.views += 1 #GET 요청시 조회수 증가 
+        project.save()
+        return project
     
     def validate_title(self, value):
         if not value:
