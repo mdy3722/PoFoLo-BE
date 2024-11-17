@@ -4,11 +4,12 @@ from django.shortcuts import get_object_or_404
 
 
 class ProjectListSerializer(serializers.ModelSerializer):
+    writer_name = serializers.CharField(source='writer.nickname')
     thumbnail = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
-        fields = ['id', 'writer', 'title', 'major_field', 'sub_field',
+        fields = ['id', 'writer', 'writer_name', 'title', 'major_field', 'sub_field',
         'liked_count', 'comment_count', 'thumbnail', 'created_at']
 
     def get_thumbnail(self, obj):
@@ -16,6 +17,7 @@ class ProjectListSerializer(serializers.ModelSerializer):
         return obj.picture_urls[0] if obj.picture_urls else None 
 
 class ProjectDetailSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Project
         fields = ['id', 'writer', 'title', 'description', 'major_field', 'sub_field','tags', 'skills', 'links', 

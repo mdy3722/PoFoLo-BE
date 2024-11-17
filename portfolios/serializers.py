@@ -11,7 +11,7 @@ class PortfolioListSerializer(serializers.ModelSerializer):
 
     def get_thumbnail(self, obj):
         #FIX - None 대신 디폴트 이미지 url 첨부해야됨. 
-        return obj.image_urls[0] if obj.image_urls else None 
+        return None #obj.image_urls[0] if obj.image_urls else None 
 
 
 class PortfolioDetailSerializer(serializers.ModelSerializer):

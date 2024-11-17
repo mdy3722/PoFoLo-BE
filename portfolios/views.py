@@ -1,6 +1,6 @@
 from rest_framework import generics, permissions
 from django.shortcuts import get_object_or_404
-from .models import Portfolio
+from .models import Portfolio, PofoloUser
 from .serializers import PortfolioListSerializer, PortfolioDetailSerializer
 
 # 포트폴리오 리스트 조회
@@ -9,13 +9,24 @@ class PortfolioListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Portfolio.objects.filter(writer=self.request.user)
+        user = get_object_or_404(PofoloUser, user=self.request.user)
+        return Portfolio.objects.filter(writer=user)
 
-# 포트폴리오 상세내용 조회
+# 포트폴리오 상세내용 조회/수정/삭제 
 class PortfolioDetailView(generics.RetrieveAPIView):
     queryset = Portfolio.objects.all()
     serializer_class = PortfolioDetailSerializer
+    permission_classes = [permissions.IsAuthenticated]
     lookup_field = 'pk'
+
+    def get_object(self):
+        portfolio = super().get_object()
+        portfolio.views += 1 #GET 요청시 조회수 증가 
+        portfolio.save()
+        return portfolio
+
+    def perform_update(self, serializer):
+        serializer.save()
 
 # 포트폴리오 생성
 class PortfolioCreateView(generics.CreateAPIView):
@@ -23,15 +34,8 @@ class PortfolioCreateView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(writer=self.request.user)
-
-# 포트폴리오 수정/삭제
-class ProjectUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
-    serializer_class = PortfolioDetailSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return Portfolio.objects.filter(writer=self.request.user)
+        user = get_object_or_404(PofoloUser, user=self.request.user)
+        serializer.save(writer=user)
 
 # 포트폴리오 초대 URL 조회
 class PortfolioInviteView(generics.RetrieveAPIView):
