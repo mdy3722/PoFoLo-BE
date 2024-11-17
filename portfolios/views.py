@@ -9,8 +9,13 @@ class PortfolioListView(generics.ListAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        user = get_object_or_404(PofoloUser, user=self.request.user)
-        return Portfolio.objects.filter(writer=user)
+        queryset = Portfolio.objects.filter(is_public=True)
+        user_id = self.kwargs.get('user_id')  # URL 경로에서 user_id를 가져옴
+
+        if user_id:
+            queryset = queryset.filter(writer__id=user_id)
+
+        return queryset
 
 # 포트폴리오 상세내용 조회/수정/삭제 
 class PortfolioDetailView(generics.RetrieveAPIView):

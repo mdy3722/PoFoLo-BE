@@ -7,7 +7,7 @@ class PortfolioListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        fields = ['title', 'thumbnail', 'created_at']
+        fields = ['id','title', 'thumbnail', 'created_at']
 
     def get_thumbnail(self, obj):
         #FIX - None 대신 디폴트 이미지 url 첨부해야됨. 
