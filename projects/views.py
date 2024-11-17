@@ -27,11 +27,15 @@ class ProjectListView(generics.ListAPIView):
             queryset = queryset.filter(major_field=field)
         return queryset
 
-# - 프로젝트 세부내용 조회
-class ProjectDetailView(generics.RetrieveAPIView):
+# - 프로젝트 세부내용 조회/수정/삭제
+class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Project.objects.all()
     serializer_class = ProjectDetailSerializer
+    permission_classes = [permissions.IsAuthenticated]
     lookup_field = 'pk'
+    
+    def perform_update(self, serializer):
+        serializer.save()
 
 # - 프로젝트 생성
 class ProjectCreateView(generics.CreateAPIView):
@@ -59,16 +63,6 @@ class ProjectImageUploadView(APIView):
             TemporaryImage.objects.create(image_url=image_url, session_key=session_key)
 
         return Response({"message": "Images uploaded successfully.", "session_key": session_key}, status=status.HTTP_201_CREATED)
-
-# - 프로젝트 수정/삭제
-class ProjectUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Project.objects.all()
-    serializer_class = ProjectDetailSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    lookup_field = 'pk'
-
-    def perform_update(self, serializer):
-        serializer.save()
 
 """link의 title 반환 로직"""
 class LinkTitleView(APIView):
@@ -147,7 +141,8 @@ class MyProjectsView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Project.objects.filter(writer=self.request.user)
+        user = get_object_or_404(PofoloUser, user=self.request.user)
+        return Project.objects.filter(writer=user)
 
 # - 좋아요한 프로젝트 조회
 class LikedProjectView(generics.ListAPIView):
@@ -155,7 +150,8 @@ class LikedProjectView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        liked_projects = Like.objects.filter(user=self.request.user).values_list('project', flat=True)
+        user = get_object_or_404(PofoloUser, user=self.request.user)
+        liked_projects = Like.objects.filter(user=user).values_list('project', flat=True)
         return Project.objects.filter(id__in=liked_projects)
 
 # - 코멘트한 프로젝트 조회
@@ -164,5 +160,6 @@ class CommentedProjectView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        commented_projects = Comment.objects.filter(writer=self.request.user).values_list('project', flat=True)
+        user = get_object_or_404(PofoloUser, user=self.request.user)
+        commented_projects = Comment.objects.filter(writer=user).values_list('project', flat=True)
         return Project.objects.filter(id__in=commented_projects)
