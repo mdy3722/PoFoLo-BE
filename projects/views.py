@@ -22,9 +22,14 @@ class ProjectListView(generics.ListAPIView):
 
     def get_queryset(self):
         queryset = Project.objects.filter(is_public=True)
-        field = self.request.query_params.get('field') #filtering with major_field 
+        user_id = self.kwargs.get('user_id')  # URL 경로에서 user_id를 가져옴
+        field = self.request.query_params.get('field')  # major_field 필터링
+
+        if user_id:
+            queryset = queryset.filter(writer__id=user_id)
         if field:
             queryset = queryset.filter(major_field=field)
+
         return queryset
 
 # - 프로젝트 세부내용 조회/수정/삭제
