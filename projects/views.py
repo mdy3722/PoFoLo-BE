@@ -65,6 +65,26 @@ class ProjectUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
     def perform_update(self, serializer):
         serializer.save()
 
+# - 좋아요 누르기
+class LikeProjectView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, project_id):
+        user = get_object_or_404(PofoloUser, user=self.request.user)
+        project = get_object_or_404(Project, id=project_id)  # 좋아요를 누를 프로젝트
+        like_instance = Like.objects.filter(user=user, project=project).first()
+
+        if like_instance: #좋아요 취소
+            like_instance.delete()
+            project.liked_count -= 1
+            project.save()
+            return Response({"message": "Like removed"}, status=status.HTTP_200_OK)
+        else:
+            Like.objects.create(user=user, project=project) #좋아요 추가
+            project.liked_count += 1
+            project.save()
+            return Response({"message": "Like added"}, status=status.HTTP_201_CREATED)
+            
 """link의 title 반환 로직"""
 class LinkTitleView(APIView):
     permission_classes = [AllowAny]    # AllowAny는 로컬테스트용. 나중에 IsAuthenticated으로 수정 해야 함
