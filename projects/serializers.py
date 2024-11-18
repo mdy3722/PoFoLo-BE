@@ -60,13 +60,17 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
 
 """댓글"""
 class CommentSerializer(serializers.ModelSerializer):
+    replies = serializers.SerializerMethodField()  # 답글 필드 추가
+
     class Meta:
         model = Comment
-        fields = ['id', 'writer', 'project', 'commented_at', 'text', 'parent_comment']
+        fields = ['id', 'writer', 'project', 'commented_at', 'text', 'parent_comment', 'replies']
         read_only_fields = ['writer', 'commented_at', 'project'] # 작성자, 작성시간 수정 불가
-    
-    def create(self, validated_data):
-        request = self.context.get('request')
-        user = get_object_or_404(PofoloUser, user=request.user)
-        validated_data['writer'] = user
-        return super().create(validated_data)
+
+    def get_replies(self, obj):
+        """
+        부모 댓글에 연결된 답글 목록을 직렬화합니다.
+        """
+        if obj.replies.exists():  # replies는 related_name을 사용해 연결됨
+            return CommentSerializer(obj.replies.all(), many=True).data
+        return []
