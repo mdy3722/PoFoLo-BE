@@ -2,13 +2,11 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
-from .models import Project, TemporaryImage, Comment, Like, PofoloUser
+from .models import Project, TemporaryImage, Comment, Like
 from .serializers import ProjectListSerializer, ProjectDetailSerializer, CommentSerializer
 from django.contrib.sessions.backends.db import SessionStore
-from django.core.exceptions import ValidationError 
+from users.models import PofoloUser
 from django.shortcuts import get_object_or_404
-
-
 
 """링크 title 태그 반환을 위한 import"""
 import requests
@@ -22,31 +20,16 @@ class ProjectListView(generics.ListAPIView):
 
     def get_queryset(self):
         queryset = Project.objects.filter(is_public=True)
-        user_id = self.kwargs.get('user_id')  # URL 경로에서 user_id를 가져옴
-        field = self.request.query_params.get('field')  # major_field 필터링
-
-        if user_id:
-            queryset = queryset.filter(writer__id=user_id)
+        field = self.request.query_params.get('field') #filtering with major_field 
         if field:
             queryset = queryset.filter(major_field=field)
-
         return queryset
 
-# - 프로젝트 세부내용 조회/수정/삭제
-class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
+# - 프로젝트 세부내용 조회
+class ProjectDetailView(generics.RetrieveAPIView):
     queryset = Project.objects.all()
     serializer_class = ProjectDetailSerializer
-    permission_classes = [permissions.IsAuthenticated]
     lookup_field = 'pk'
-
-    def get_object(self):
-        project = super().get_object()
-        project.views += 1 #GET 요청시 조회수 증가 
-        project.save()
-        return project
-
-    def perform_update(self, serializer):
-        serializer.save()
 
 # - 프로젝트 생성
 class ProjectCreateView(generics.CreateAPIView):
@@ -54,12 +37,9 @@ class ProjectCreateView(generics.CreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        try:
-            pofolo_user = get_object_or_404(PofoloUser, user=self.request.user)
-            serializer.save(writer=pofolo_user) # writer를 PofoloUser로 설정
+        pofolo_user = get_object_or_404(PofoloUser, user=self.request.user)
+        serializer.save(writer=pofolo_user)
 
-        except AttributeError:
-            raise ValidationError("The user does not have a linked PofoloUser instance.")
 
 # - 프로젝트 이미지 추가
 class ProjectImageUploadView(APIView):
@@ -75,28 +55,16 @@ class ProjectImageUploadView(APIView):
 
         return Response({"message": "Images uploaded successfully.", "session_key": session_key}, status=status.HTTP_201_CREATED)
 
-# - 좋아요 누르기
-class LikeProjectView(APIView):
-    permission_classes = [IsAuthenticated]
+# - 프로젝트 수정/삭제
+class ProjectUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Project.objects.all()
+    serializer_class = ProjectDetailSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = 'pk'
 
-    def post(self, request, project_id):
-        user = get_object_or_404(PofoloUser, user=self.request.user)
-        project = get_object_or_404(Project, id=project_id)
+    def perform_update(self, serializer):
+        serializer.save()
 
-        like_instance = Like.objects.filter(user=user, project=project).first()
-        if like_instance:
-            # 이미 좋아요가 눌러진 상태
-            like_instance.delete()
-            project.liked_count -= 1
-            project.save()
-            return Response({"message": "Like removed"}, status=status.HTTP_200_OK)
-        else:
-            # 좋아요가 눌러지지 않은 상태
-            Like.objects.create(user=user, project=project)
-            project.liked_count += 1
-            project.save()
-            return Response({"message": "Like added"}, status=status.HTTP_201_CREATED)
-    
 """link의 title 반환 로직"""
 class LinkTitleView(APIView):
     permission_classes = [AllowAny]    # AllowAny는 로컬테스트용. 나중에 IsAuthenticated으로 수정 해야 함
@@ -122,8 +90,22 @@ class LinkTitleView(APIView):
             return JsonResponse({'error': str(e)}, status=400)
 
 """댓글 및 답글 작성하기"""
-class CommentCreateView(APIView):
+class CommentListView(APIView):
     permission_classes = [IsAuthenticated]
+
+    def get(self, request, project_id):
+        """
+        특정 프로젝트의 모든 댓글과 답글을 반환
+        """
+        try:
+            project = Project.objects.get(id=project_id)
+        except Project.DoesNotExist:
+            return Response({"error": "Project not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # 부모 댓글만 가져오기, 답글은 Serializer에서 처리
+        comments = Comment.objects.filter(project=project, parent_comment__isnull=True).prefetch_related('replies')
+        serializer = CommentSerializer(comments, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, project_id):
         # 프로젝트 인스턴스를 가져옴
@@ -137,20 +119,18 @@ class CommentCreateView(APIView):
         parent_comment = None   # 부모 댓글 id가 없으면 부모 댓글 객체를 none으로 유지
         if parent_comment_id:   # 답글이라면
             try:
-                parent_comment = Comment.objects.get(id=parent_comment_id, project=project)  # 프론트엔드에서 받은 부모 댓글 id를 조회해 부모 댓글 객체 할당
+                parent_comment = Comment.objects.get(id=parent_comment_id, project=project)
+                # 답글에 대한 답글 방지
+                if parent_comment.parent_comment is not None:
+                    return Response({"error": "Replies to replies are not allowed"}, status=status.HTTP_400_BAD_REQUEST)
             except Comment.DoesNotExist:
                 return Response({"error": "Parent comment not found"}, status=status.HTTP_404_NOT_FOUND)
 
         # 댓글 데이터를 시리얼라이저로 전달
-        serializer = CommentSerializer(
-            data=request.data,
-            context={
-                'request': request,  # request 객체 전달
-            }
-        )
+        pofolo_user = get_object_or_404(PofoloUser, user=self.request.user)
+        serializer = CommentSerializer(data=request.data)
         if serializer.is_valid():
-            user = get_object_or_404(PofoloUser, user=request.user)
-            serializer.save(writer=user, project=project, parent_comment=parent_comment)
+            serializer.save(writer=pofolo_user, project=project, parent_comment=parent_comment)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -166,7 +146,7 @@ class CommentDeleteView(APIView):
             return Response({"error": "Comment not found"}, status=status.HTTP_404_NOT_FOUND)
 
         # 요청한 사용자가 댓글 작성자인지 확인
-        if comment.writer != request.user:
+        if comment.writer.user != request.user:  # PofoloUser의 user 필드와 비교
             return Response({"error": "You do not have permission to delete this comment"}, status=status.HTTP_403_FORBIDDEN)
 
         # 댓글 삭제
@@ -180,8 +160,7 @@ class MyProjectsView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = get_object_or_404(PofoloUser, user=self.request.user)
-        return Project.objects.filter(writer=user)
+        return Project.objects.filter(writer=self.request.user)
 
 # - 좋아요한 프로젝트 조회
 class LikedProjectView(generics.ListAPIView):
@@ -189,8 +168,7 @@ class LikedProjectView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = get_object_or_404(PofoloUser, user=self.request.user)
-        liked_projects = Like.objects.filter(user=user).values_list('project', flat=True)
+        liked_projects = Like.objects.filter(user=self.request.user).values_list('project', flat=True)
         return Project.objects.filter(id__in=liked_projects)
 
 # - 코멘트한 프로젝트 조회
@@ -199,6 +177,5 @@ class CommentedProjectView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        user = get_object_or_404(PofoloUser, user=self.request.user)
-        commented_projects = Comment.objects.filter(writer=user).values_list('project', flat=True)
+        commented_projects = Comment.objects.filter(writer=self.request.user).values_list('project', flat=True)
         return Project.objects.filter(id__in=commented_projects)
