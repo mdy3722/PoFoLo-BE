@@ -7,7 +7,8 @@ from .serializers import ProjectListSerializer, ProjectDetailSerializer, Comment
 from django.contrib.sessions.backends.db import SessionStore
 from django.core.exceptions import ValidationError 
 from django.shortcuts import get_object_or_404
-
+from utils.s3_utils import s3_file_upload_by_file_data
+from django.conf import settings
 
 
 """링크 title 태그 반환을 위한 import"""
@@ -49,31 +50,106 @@ class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
         serializer.save()
 
 # - 프로젝트 생성
-class ProjectCreateView(generics.CreateAPIView):
-    serializer_class = ProjectDetailSerializer
-    permission_classes = [permissions.IsAuthenticated]
+class ProjectCreateView(APIView):
+    def post(self, request):
+        session_key = request.session.session_key
+        if not session_key:
+            return Response({"error": "세션이 필요합니다."}, status=status.HTTP_400_BAD_REQUEST)
 
-    def perform_create(self, serializer):
-        try:
+        serializer = ProjectDetailSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
             pofolo_user = get_object_or_404(PofoloUser, user=self.request.user)
-            serializer.save(writer=pofolo_user) # writer를 PofoloUser로 설정
+            project = serializer.save(writer=pofolo_user)
 
-        except AttributeError:
-            raise ValidationError("The user does not have a linked PofoloUser instance.")
+            # TemporaryImage에서 이미지 가져와 연결
+            temporary_images = TemporaryImage.objects.filter(session_key=session_key)
+            project.project_img = [img.image_url for img in temporary_images[:10]]  # 최대 10개
+            project.save()
+
+            # 임시 이미지 삭제
+            temporary_images.delete()
+
+            return Response({
+                "message": "프로젝트 생성 성공",
+                "project": ProjectDetailSerializer(project).data
+            }, status=status.HTTP_201_CREATED)
+
+        return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
 
 # - 프로젝트 이미지 추가
 class ProjectImageUploadView(APIView):
     def post(self, request):
-        session_key = request.session.session_key or request.session.create()  # 세션 키 생성
-        image_urls = request.data.get('project_img', [])
+        session_key = request.session.session_key
+        if not session_key:
+            request.session.create()
+            session_key = request.session.session_key
 
-        if len(image_urls) > 10:
-            return Response({"error": "You can upload a maximum of 10 images."}, status=status.HTTP_400_BAD_REQUEST)
+        image_files = request.FILES.getlist('project_img')
+        if not image_files:
+            return Response({"error": "이미지가 필요합니다."}, status=status.HTTP_400_BAD_REQUEST)
 
-        for image_url in image_urls:
-            TemporaryImage.objects.create(image_url=image_url, session_key=session_key)
+        uploaded_urls = []
+        for image_file in image_files: 
+            uploaded_url = s3_file_upload_by_file_data(
+                upload_file=image_file,
+                region_name=settings.AWS_S3_REGION_NAME,
+                bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
+                bucket_path=f"project/temp_images/{session_key}"
+            )
+            if uploaded_url:
+                # TemporaryImage에 업로드 정보 저장
+                TemporaryImage.objects.create(session_key=session_key, image_url=uploaded_url)
+                uploaded_urls.append(uploaded_url)
 
-        return Response({"message": "Images uploaded successfully.", "session_key": session_key}, status=status.HTTP_201_CREATED)
+            if not uploaded_url:
+                return Response({"error": "이미지 업로드 실패"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response({
+            "message": "이미지 업로드 성공",
+            "image_urls": uploaded_urls,
+            #"temp_image_id": temp_image.id
+        }, status=status.HTTP_201_CREATED)
+
+class ProjectImageManageView(APIView):
+    def patch(self, request, project_id):
+        project = get_object_or_404(Project, id=project_id)
+        pofolo_user = get_object_or_404(PofoloUser, user=self.request.user)
+        # 권한 체크
+        if pofolo_user != project.writer:
+            return Response({"error": "권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
+
+        # 기존 이미지 가져오기
+        current_images = project.project_img or []
+
+        # 새 이미지 추가 처리
+        new_images = request.FILES.getlist('new_images', [])
+        for image_file in new_images:
+            if len(current_images) >= 10:  # 최대 10개 제한
+                return Response({"error": "이미지는 최대 10개까지만 업로드할 수 있습니다."}, status=status.HTTP_400_BAD_REQUEST)
+
+            uploaded_url = s3_file_upload_by_file_data(
+                upload_file=image_file,
+                region_name=settings.AWS_S3_REGION_NAME,
+                bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
+                bucket_path=f"project/images/{project.writer.id}"
+            )
+            if uploaded_url:
+                current_images.append(uploaded_url)
+
+        # 삭제 이미지 처리
+        delete_images = request.data.get('delete_images', [])
+        current_images = [img for img in current_images if img not in delete_images]
+
+        # 변경된 이미지 저장
+        project.project_img = current_images
+        project.save()
+
+        serializer = ProjectDetailSerializer(project)
+        return Response({
+            "message": "이미지 수정 성공",
+            "project": serializer.data
+        }, status=status.HTTP_200_OK)
 
 # - 좋아요 누르기
 class LikeProjectView(APIView):
