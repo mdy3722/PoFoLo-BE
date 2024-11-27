@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Project, TemporaryImage, Like, Comment, PofoloUser
+from .models import Project, Comment, PofoloUser
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from utils.s3_utils import s3_file_upload_by_file_data

@@ -2,10 +2,8 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
-from .models import Project, TemporaryImage, Comment, Like, PofoloUser
+from .models import Project, Comment, Like, PofoloUser
 from .serializers import ProjectListSerializer, ProjectDetailSerializer, CommentSerializer
-from django.contrib.sessions.backends.db import SessionStore
-from django.core.exceptions import ValidationError 
 from django.shortcuts import get_object_or_404
 from utils.s3_utils import s3_file_upload_by_file_data
 from django.conf import settings
@@ -61,53 +59,6 @@ class ProjectCreateAndImageUploadView(APIView):
             return Response(ProjectDetailSerializer(project).data, status=status.HTTP_201_CREATED)
         
         return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-
-    #     # JSON 데이터 처리
-    #     project_data = request.data.dict()
-    #     serializer = ProjectDetailSerializer(data=project_data, context={'request': request})
-
-    #     if not serializer.is_valid():
-    #         return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-
-    #     # 이미지 파일 처리
-    #     image_files = request.FILES.getlist('project_img')
-    #     uploaded_urls = []
-
-    #     for image_file in image_files:
-    #         uploaded_url = s3_file_upload_by_file_data(
-    #             upload_file=image_file,
-    #             region_name=settings.AWS_S3_REGION_NAME,
-    #             bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
-    #             bucket_path=f"project/temp_images/{session_key}"
-    #         )
-    #         if uploaded_url:
-    #             uploaded_urls.append(uploaded_url)
-    #         else:
-    #             return Response({"error": "이미지 업로드 실패"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    #     # 프로젝트 생성
-    #     pofolo_user = get_object_or_404(PofoloUser, user=self.request.user)
-    #     project = serializer.save(writer=pofolo_user, project_img=uploaded_urls)  # 이미지 URL 저장
-
-    #     return Response({
-    #         "id": project.id,
-    #         "writer": project.writer.id,
-    #         "title": project.title,
-    #         "description": project.description,
-    #         "major_field": project.major_field,
-    #         "sub_field": project.sub_field,
-    #         "tags": project_data.get('tags', []),
-    #         "skills": project_data.get('skills', []),
-    #         "links": project_data.get('links', {}),
-    #         "project_img": uploaded_urls,
-    #         "created_at": project.created_at,
-    #         "is_public": project.is_public,
-    #         "liked_count": 0, 
-    #         "comment_count": 0, 
-    #         "views": 0, 
-    #     }, status=status.HTTP_201_CREATED)
-
-
 
 class ProjectImageManageView(APIView):
     def patch(self, request, project_id):

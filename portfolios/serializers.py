@@ -2,7 +2,6 @@ from typing_extensions import Required
 from rest_framework import serializers
 from .models import Portfolio
 from projects.models import Project
-from django.db.models import Case, When
 
 class PortfolioListSerializer(serializers.ModelSerializer):
     thumbnail = serializers.SerializerMethodField()

@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ValidationError
 from users.models import PofoloUser
 
