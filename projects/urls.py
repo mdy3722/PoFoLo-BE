@@ -7,7 +7,7 @@ from .views import (
 )
 
 urlpatterns = [
-    path('/', ProjectListView.as_view(), name='project-list'),#프로젝트 리스트 조회
+    path('', ProjectListView.as_view(), name='project-list'),#프로젝트 리스트 조회
     path('/<int:pk>', ProjectDetailView.as_view(), name='project-detail'), # 프로젝트 세부사항 조회/수정/삭제
     path('/create', ProjectCreateAndImageUploadView.as_view(), name='project-create'),  # 프로젝트 생성
     path('/<int:project_id>/project-img', ProjectImageManageView.as_view()), # 이미지 수정   
