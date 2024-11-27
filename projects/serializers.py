@@ -14,14 +14,14 @@ class ProjectListSerializer(serializers.ModelSerializer):
 
     def get_thumbnail(self, obj):
         #FIX - None 대신 디폴트 이미지 url 첨부해야됨. 
-        return obj.picture_urls[0] if obj.picture_urls else None 
+        return obj.project_img[0] if obj.project_img else None 
 
 class ProjectDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Project
         fields = ['id', 'writer', 'title', 'description', 'major_field', 'sub_field','tags', 'skills', 'links', 
-                'picture_urls', 'created_at', 'is_public', 'liked_count', 'comment_count', 'views']
+                'project_img', 'created_at', 'is_public', 'liked_count', 'comment_count', 'views']
         read_only_fields = ['id', 'writer', 'created_at', 'liked_count', 'comment_count', 'views']
         # - 변경 불가 항목들
 

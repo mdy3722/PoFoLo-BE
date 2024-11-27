@@ -11,7 +11,7 @@ class Project(models.Model):
     tags = models.JSONField(default=list)
     skills = models.JSONField(default=list)
     links = models.JSONField()
-    picture_urls = models.JSONField(default=dict) #FIX - default img 넣어야함 !
+    project_img = models.JSONField(default=dict)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_public = models.BooleanField(default=True)
@@ -21,7 +21,7 @@ class Project(models.Model):
     writer = models.ForeignKey(PofoloUser, on_delete=models.CASCADE)
 
     def clean(self):
-        if len(self.picture_urls) > 10:
+        if len(self.project_img) > 10:
             raise ValidationError("uploaded more than 10 images.")
     
     def __str__(self):

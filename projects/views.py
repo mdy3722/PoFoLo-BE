@@ -65,7 +65,7 @@ class ProjectCreateView(generics.CreateAPIView):
 class ProjectImageUploadView(APIView):
     def post(self, request):
         session_key = request.session.session_key or request.session.create()  # 세션 키 생성
-        image_urls = request.data.get('picture_urls', [])
+        image_urls = request.data.get('project_img', [])
 
         if len(image_urls) > 10:
             return Response({"error": "You can upload a maximum of 10 images."}, status=status.HTTP_400_BAD_REQUEST)
