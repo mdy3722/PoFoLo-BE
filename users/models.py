@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.conf import settings
+from utils import s3_utils
 
 def get_default_availability():     # 가용성 디폴트 값 반환
     return ["제안 받지 않음"]
@@ -18,11 +20,29 @@ class PofoloUser(models.Model):
     email_is_public = models.BooleanField(default=False)  # 이메일 비공개 디폴트
     introduction = models.TextField(blank=True, null=True)
     links = models.JSONField(blank=True, null=True)  
-    availability = models.JSONField(null=True, blank=True, default=get_default_availability)  
-
+    availability = models.JSONField(null=True, blank=True, default=get_default_availability)
+    profile_img = models.URLField(null=True, blank=True)  # S3 이미지 URL
+  
     def __str__(self):
         return self.nickname
     
     class Meta:
         db_table = 'users'
+
+    def upload_profile_image(user, file):
+        bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+        region_name = settings.AWS_S3_REGION_NAME
+        bucket_path = f"user/profile_images/{user.id}"
+    
+        uploaded_url = s3_utils.s3_file_upload_by_file_data(
+            upload_file=file,
+            region_name=region_name,
+            bucket_name=bucket_name,
+            bucket_path=bucket_path
+        )
+        if not uploaded_url:
+           raise ValueError("Failed to upload profile image to S3")
+        user.profile_img = uploaded_url
+        user.save()
+        return uploaded_url
 

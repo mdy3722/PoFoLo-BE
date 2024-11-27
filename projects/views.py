@@ -2,11 +2,13 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
-from .models import Project, TemporaryImage, Comment, Like
+from .models import Project, Comment, Like, PofoloUser
 from .serializers import ProjectListSerializer, ProjectDetailSerializer, CommentSerializer
-from django.contrib.sessions.backends.db import SessionStore
-from users.models import PofoloUser
 from django.shortcuts import get_object_or_404
+from utils.s3_utils import s3_file_upload_by_file_data
+from django.conf import settings
+from rest_framework.parsers import MultiPartParser, FormParser
+
 
 """링크 title 태그 반환을 위한 import"""
 import requests
@@ -31,39 +33,66 @@ class ProjectDetailView(generics.RetrieveAPIView):
     serializer_class = ProjectDetailSerializer
     lookup_field = 'pk'
 
-# - 프로젝트 생성
-class ProjectCreateView(generics.CreateAPIView):
-    serializer_class = ProjectDetailSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def perform_create(self, serializer):
-        pofolo_user = get_object_or_404(PofoloUser, user=self.request.user)
-        serializer.save(writer=pofolo_user)
-
-
-# - 프로젝트 이미지 추가
-class ProjectImageUploadView(APIView):
-    def post(self, request):
-        session_key = request.session.session_key or request.session.create()  # 세션 키 생성
-        image_urls = request.data.get('picture_urls', [])
-
-        if len(image_urls) > 10:
-            return Response({"error": "You can upload a maximum of 10 images."}, status=status.HTTP_400_BAD_REQUEST)
-
-        for image_url in image_urls:
-            TemporaryImage.objects.create(image_url=image_url, session_key=session_key)
-
-        return Response({"message": "Images uploaded successfully.", "session_key": session_key}, status=status.HTTP_201_CREATED)
-
-# - 프로젝트 수정/삭제
-class ProjectUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Project.objects.all()
-    serializer_class = ProjectDetailSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    lookup_field = 'pk'
+    def get_object(self):
+        project = super().get_object()
+        project.views += 1 #GET 요청시 조회수 증가 
+        project.save()
+        return project
 
     def perform_update(self, serializer):
         serializer.save()
+
+class ProjectCreateAndImageUploadView(APIView):
+    parser_classes = [MultiPartParser, FormParser]  # JSON + 파일 처리
+
+    def post(self, request):
+        serializer = ProjectDetailSerializer(data=request.data, context={"request": request})
+        
+        if serializer.is_valid():
+            project = serializer.save()
+            return Response(ProjectDetailSerializer(project).data, status=status.HTTP_201_CREATED)
+        
+        return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+class ProjectImageManageView(APIView):
+    def patch(self, request, project_id):
+        project = get_object_or_404(Project, id=project_id)
+        pofolo_user = get_object_or_404(PofoloUser, user=self.request.user)
+        # 권한 체크
+        if pofolo_user != project.writer:
+            return Response({"error": "권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
+
+        # 기존 이미지 가져오기
+        current_images = project.project_img or []
+
+        # 새 이미지 추가 처리
+        new_images = request.FILES.getlist('new_images', [])
+        for image_file in new_images:
+            if len(current_images) >= 10:  # 최대 10개 제한
+                return Response({"error": "이미지는 최대 10개까지만 업로드할 수 있습니다."}, status=status.HTTP_400_BAD_REQUEST)
+
+            uploaded_url = s3_file_upload_by_file_data(
+                upload_file=image_file,
+                region_name=settings.AWS_S3_REGION_NAME,
+                bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
+                bucket_path=f"project/images/{project.writer.id}"
+            )
+            if uploaded_url:
+                current_images.append(uploaded_url)
+
+        # 삭제 이미지 처리
+        delete_images = request.data.get('delete_images', [])
+        current_images = [img for img in current_images if img not in delete_images]
+
+        # 변경된 이미지 저장
+        project.project_img = current_images
+        project.save()
+
+        serializer = ProjectDetailSerializer(project)
+        return Response({
+            "message": "이미지 수정 성공",
+            "project": serializer.data
+        }, status=status.HTTP_200_OK)
 
 # - 좋아요 누르기
 class LikeProjectView(APIView):

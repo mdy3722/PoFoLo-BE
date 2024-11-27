@@ -1,7 +1,8 @@
 from rest_framework import serializers
-from .models import Project, TemporaryImage, Like, Comment, PofoloUser
+from .models import Project, Comment, PofoloUser
+from django.conf import settings
 from django.shortcuts import get_object_or_404
-
+from utils.s3_utils import s3_file_upload_by_file_data
 
 class ProjectListSerializer(serializers.ModelSerializer):
     writer_name = serializers.CharField(source='writer.nickname')
@@ -13,17 +14,20 @@ class ProjectListSerializer(serializers.ModelSerializer):
         'liked_count', 'comment_count', 'thumbnail', 'created_at']
 
     def get_thumbnail(self, obj):
-        #FIX - None 대신 디폴트 이미지 url 첨부해야됨. 
-        return obj.picture_urls[0] if obj.picture_urls else None 
+        return obj.project_img[0] if obj.project_img else None 
 
 class ProjectDetailSerializer(serializers.ModelSerializer):
+    
+    project_img = serializers.ListField(
+        child=serializers.URLField(),
+        read_only=True
+    )
 
     class Meta:
         model = Project
         fields = ['id', 'writer', 'title', 'description', 'major_field', 'sub_field','tags', 'skills', 'links', 
-                'picture_urls', 'created_at', 'is_public', 'liked_count', 'comment_count', 'views']
+                'project_img', 'created_at', 'is_public', 'liked_count', 'comment_count', 'views']
         read_only_fields = ['id', 'writer', 'created_at', 'liked_count', 'comment_count', 'views']
-        # - 변경 불가 항목들
 
     def get_object(self):
         project = super().get_object()
@@ -47,16 +51,50 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
         return value
     
     def create(self, validated_data):
-        session_key = self.context['request'].data.get('session_key') # 세션 키로 TemporaryImage 가져오기
+        request = self.context['request']
+        writer = get_object_or_404(PofoloUser, user=request.user)
+        project_img_files = request.FILES.getlist('project_img')
+        project = Project.objects.create(writer=writer, **validated_data)
+        
+        # S3 업로드 로직
+        uploaded_urls = []
+        for img_file in project_img_files:
+            uploaded_url = s3_file_upload_by_file_data(
+                upload_file=img_file,
+                region_name=settings.AWS_S3_REGION_NAME,
+                bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
+                bucket_path=f"project/{project.id}"
+            )
+            print(f"Uploaded URL: {uploaded_url}")
+            if uploaded_url:
+                uploaded_urls.append(uploaded_url)
+        print(f"Uploaded URLs: {uploaded_urls}")
+        project.project_img = uploaded_urls
+        project.save()
+        return project
 
-        if session_key:
-            temporary_images = TemporaryImage.objects.filter(session_key=session_key)
-            picture_urls = [img.image_url for img in temporary_images]
-            validated_data['picture_urls'] = picture_urls[:10]  # 최대 10개
-            temporary_images.delete() # default 이미지 삭제
+    def update(self, instance, validated_data):
+        request = self.context['request']
+        image_files = request.FILES.getlist('project_img')  # 새로운 이미지 업로드 요청 확인
 
-        return super().create(validated_data)
+        if image_files:
+            image_urls = instance.project_img or []
+            for image_file in image_files[:10 - len(image_urls)]:  # 기존 이미지와 합쳐 최대 10개 제한
+                uploaded_url = s3_file_upload_by_file_data(
+                    upload_file=image_file,
+                    region_name=settings.AWS_S3_REGION_NAME,
+                    bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
+                    bucket_path=f"project/images/{instance.writer.id}"
+                )
+                if uploaded_url:
+                    image_urls.append(uploaded_url)
+            validated_data['project_img'] = image_urls
 
+        # 다른 필드 업데이트
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
 
 """댓글"""
 class CommentSerializer(serializers.ModelSerializer):

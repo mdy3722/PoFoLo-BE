@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib.postgres.fields import JSONField
 from django.core.exceptions import ValidationError
 from users.models import PofoloUser
 
@@ -11,7 +10,7 @@ class Project(models.Model):
     tags = models.JSONField(default=list)
     skills = models.JSONField(default=list)
     links = models.JSONField()
-    picture_urls = models.JSONField(default=dict) #FIX - default img 넣어야함 !
+    project_img = models.JSONField(default=list)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_public = models.BooleanField(default=True)
@@ -21,7 +20,7 @@ class Project(models.Model):
     writer = models.ForeignKey(PofoloUser, on_delete=models.CASCADE)
 
     def clean(self):
-        if len(self.picture_urls) > 10:
+        if len(self.project_img) > 10:
             raise ValidationError("uploaded more than 10 images.")
     
     def __str__(self):
@@ -32,9 +31,9 @@ class Project(models.Model):
 
 # 이미지 관리 class
 class TemporaryImage(models.Model):
-    image_url = models.URLField()
-    session_key = models.CharField(max_length=100)  # 세션별로 이미지 그룹화
-    uploaded_at = models.DateTimeField(auto_now_add=True)
+    session_key = models.CharField(max_length=255, unique=False, null=False)  # 사용자 고유 세션 키
+    image_url = models.URLField(null=False)  # S3에 업로드된 URL
+    created_at = models.DateTimeField(auto_now_add=True)  # 정리 스케줄링용
 
 class Like(models.Model):
     user = models.ForeignKey(PofoloUser, on_delete=models.CASCADE)

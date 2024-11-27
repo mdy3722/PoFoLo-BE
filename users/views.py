@@ -1,5 +1,7 @@
 """.env에서 SECRET 정보를 가져옴"""
 from dotenv import load_dotenv
+from django.conf import settings
+from utils import s3_utils
 import os
 load_dotenv()
 
@@ -143,7 +145,7 @@ def manage_profile(request, user_id):
 
     if request.user.id != user.id:
         return Response({"error": "권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
-    
+
     # 프로필 조회
     if request.method == 'GET':
         serializer = UserSerializer(user)
@@ -154,7 +156,7 @@ def manage_profile(request, user_id):
     
     # 프로필 수정
     elif request.method == 'PATCH':
-        serializer = UserSerializer(user, data=request.data, partial=True)
+        serializer = UserSerializer(user, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response({
@@ -163,6 +165,64 @@ def manage_profile(request, user_id):
             }, status=status.HTTP_200_OK)
         return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
     
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def upload_profile_img(request):
+    """프로필 이미지 업로드"""
+    user = request.user.pofolo_user
+    profile_img_file = request.FILES.get('profile_img', None)
+
+    if not profile_img_file:
+        return Response({"error": "이미지 파일이 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        uploaded_url = s3_utils.s3_file_upload_by_file_data(
+            upload_file=profile_img_file,
+            region_name=settings.AWS_S3_REGION_NAME,
+            bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
+            bucket_path=f"user/profile_images/{user.id}"
+        )
+        user.profile_img = uploaded_url
+        user.save()
+        return Response({"message": "프로필 이미지 업로드 성공", "profile_img_url": uploaded_url}, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['PATCH', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def manage_profile_img(request, user_id):
+    """프로필 이미지 수정/삭제"""
+    user = get_object_or_404(PofoloUser, id=user_id)
+
+    if request.user.pofolo_user.id != user.id:
+        return Response({"error": "권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
+
+    # 프로필 이미지 수정
+    if request.method == 'PATCH':
+        profile_img_file = request.FILES.get('profile_img', None)
+        if not profile_img_file:
+            return Response({"error": "이미지 파일이 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            uploaded_url = s3_utils.s3_file_upload_by_file_data(
+                upload_file=profile_img_file,
+                region_name = settings.AWS_S3_REGION_NAME,
+                bucket_name = settings.AWS_STORAGE_BUCKET_NAME,
+                bucket_path=f"user/profile_images/{user.id}"
+            )
+            user.profile_img = uploaded_url
+            user.save()
+            return Response({"message": "프로필 이미지 수정 성공", "profile_img_url": uploaded_url}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    # 프로필 이미지 삭제
+    elif request.method == 'DELETE':
+        user.profile_img = None  # 기본값으로 설정
+        user.save()
+        return Response({"message": "프로필 이미지 삭제 성공"}, status=status.HTTP_200_OK)
+
 
 """로그아웃"""
 @api_view(['POST'])
