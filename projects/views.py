@@ -9,6 +9,7 @@ from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from utils.s3_utils import s3_file_upload_by_file_data
 from django.conf import settings
+from rest_framework.parsers import MultiPartParser, FormParser
 
 
 """링크 title 태그 반환을 위한 import"""
@@ -49,67 +50,64 @@ class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
     def perform_update(self, serializer):
         serializer.save()
 
-# - 프로젝트 생성
-class ProjectCreateView(APIView):
+class ProjectCreateAndImageUploadView(APIView):
+    parser_classes = [MultiPartParser, FormParser]  # JSON + 파일 처리
+
     def post(self, request):
-        session_key = request.session.session_key
-        if not session_key:
-            return Response({"error": "세션이 필요합니다."}, status=status.HTTP_400_BAD_REQUEST)
-
-        serializer = ProjectDetailSerializer(data=request.data, context={'request': request})
+        serializer = ProjectDetailSerializer(data=request.data, context={"request": request})
+        
         if serializer.is_valid():
-            pofolo_user = get_object_or_404(PofoloUser, user=self.request.user)
-            project = serializer.save(writer=pofolo_user)
-
-            # TemporaryImage에서 이미지 가져와 연결
-            temporary_images = TemporaryImage.objects.filter(session_key=session_key)
-            project.project_img = [img.image_url for img in temporary_images[:10]]  # 최대 10개
-            project.save()
-
-            # 임시 이미지 삭제
-            temporary_images.delete()
-
-            return Response({
-                "message": "프로젝트 생성 성공",
-                "project": ProjectDetailSerializer(project).data
-            }, status=status.HTTP_201_CREATED)
-
+            project = serializer.save()
+            return Response(ProjectDetailSerializer(project).data, status=status.HTTP_201_CREATED)
+        
         return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
+    #     # JSON 데이터 처리
+    #     project_data = request.data.dict()
+    #     serializer = ProjectDetailSerializer(data=project_data, context={'request': request})
 
-# - 프로젝트 이미지 추가
-class ProjectImageUploadView(APIView):
-    def post(self, request):
-        session_key = request.session.session_key
-        if not session_key:
-            request.session.create()
-            session_key = request.session.session_key
+    #     if not serializer.is_valid():
+    #         return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
-        image_files = request.FILES.getlist('project_img')
-        if not image_files:
-            return Response({"error": "이미지가 필요합니다."}, status=status.HTTP_400_BAD_REQUEST)
+    #     # 이미지 파일 처리
+    #     image_files = request.FILES.getlist('project_img')
+    #     uploaded_urls = []
 
-        uploaded_urls = []
-        for image_file in image_files: 
-            uploaded_url = s3_file_upload_by_file_data(
-                upload_file=image_file,
-                region_name=settings.AWS_S3_REGION_NAME,
-                bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
-                bucket_path=f"project/temp_images/{session_key}"
-            )
-            if uploaded_url:
-                # TemporaryImage에 업로드 정보 저장
-                TemporaryImage.objects.create(session_key=session_key, image_url=uploaded_url)
-                uploaded_urls.append(uploaded_url)
+    #     for image_file in image_files:
+    #         uploaded_url = s3_file_upload_by_file_data(
+    #             upload_file=image_file,
+    #             region_name=settings.AWS_S3_REGION_NAME,
+    #             bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
+    #             bucket_path=f"project/temp_images/{session_key}"
+    #         )
+    #         if uploaded_url:
+    #             uploaded_urls.append(uploaded_url)
+    #         else:
+    #             return Response({"error": "이미지 업로드 실패"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-            if not uploaded_url:
-                return Response({"error": "이미지 업로드 실패"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    #     # 프로젝트 생성
+    #     pofolo_user = get_object_or_404(PofoloUser, user=self.request.user)
+    #     project = serializer.save(writer=pofolo_user, project_img=uploaded_urls)  # 이미지 URL 저장
 
-        return Response({
-            "message": "이미지 업로드 성공",
-            "image_urls": uploaded_urls,
-            #"temp_image_id": temp_image.id
-        }, status=status.HTTP_201_CREATED)
+    #     return Response({
+    #         "id": project.id,
+    #         "writer": project.writer.id,
+    #         "title": project.title,
+    #         "description": project.description,
+    #         "major_field": project.major_field,
+    #         "sub_field": project.sub_field,
+    #         "tags": project_data.get('tags', []),
+    #         "skills": project_data.get('skills', []),
+    #         "links": project_data.get('links', {}),
+    #         "project_img": uploaded_urls,
+    #         "created_at": project.created_at,
+    #         "is_public": project.is_public,
+    #         "liked_count": 0, 
+    #         "comment_count": 0, 
+    #         "views": 0, 
+    #     }, status=status.HTTP_201_CREATED)
+
+
 
 class ProjectImageManageView(APIView):
     def patch(self, request, project_id):

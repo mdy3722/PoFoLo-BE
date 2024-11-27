@@ -11,7 +11,7 @@ class Project(models.Model):
     tags = models.JSONField(default=list)
     skills = models.JSONField(default=list)
     links = models.JSONField()
-    project_img = models.JSONField(default=dict)
+    project_img = models.JSONField(default=list)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_public = models.BooleanField(default=True)

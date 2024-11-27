@@ -17,6 +17,11 @@ class ProjectListSerializer(serializers.ModelSerializer):
         return obj.project_img[0] if obj.project_img else None 
 
 class ProjectDetailSerializer(serializers.ModelSerializer):
+    
+    project_img = serializers.ListField(
+        child=serializers.URLField(),
+        read_only=True
+    )
 
     class Meta:
         model = Project
@@ -47,22 +52,26 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         request = self.context['request']
-        image_files = request.FILES.getlist('project_img')  # 여러 이미지 파일 업로드
-
-        if image_files:
-            project_img = []
-            for image_file in image_files[:10]:  # 최대 10개 제한
-                uploaded_url = s3_file_upload_by_file_data(
-                    upload_file=image_file,
-                    region_name=settings.AWS_S3_REGION_NAME,
-                    bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
-                    bucket_path=f"project/images/{validated_data['writer'].id}"
-                )
-                if uploaded_url:
-                    project_img.append(uploaded_url)
-            validated_data['project_img'] = project_img
-
-        return super().create(validated_data)
+        writer = get_object_or_404(PofoloUser, user=request.user)
+        project_img_files = request.FILES.getlist('project_img')
+        project = Project.objects.create(writer=writer, **validated_data)
+        
+        # S3 업로드 로직
+        uploaded_urls = []
+        for img_file in project_img_files:
+            uploaded_url = s3_file_upload_by_file_data(
+                upload_file=img_file,
+                region_name=settings.AWS_S3_REGION_NAME,
+                bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
+                bucket_path=f"project/{project.id}"
+            )
+            print(f"Uploaded URL: {uploaded_url}")
+            if uploaded_url:
+                uploaded_urls.append(uploaded_url)
+        print(f"Uploaded URLs: {uploaded_urls}")
+        project.project_img = uploaded_urls
+        project.save()
+        return project
 
     def update(self, instance, validated_data):
         request = self.context['request']
