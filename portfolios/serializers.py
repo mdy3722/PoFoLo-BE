@@ -10,8 +10,13 @@ class PortfolioListSerializer(serializers.ModelSerializer):
         fields = ['id','title', 'thumbnail', 'created_at']
 
     def get_thumbnail(self, obj):
-        #FIX - None 대신 디폴트 이미지 url 첨부해야됨. 
-        return None #obj.image_urls[0] if obj.image_urls else None 
+        first_project = obj.related_projects.first()
+
+        if not first_project or not hasattr(first_project, 'project_img'):
+            return None
+
+        project_img = first_project.project_img
+        return project_img[0] if project_img else None
 
 
 class PortfolioDetailSerializer(serializers.ModelSerializer):
