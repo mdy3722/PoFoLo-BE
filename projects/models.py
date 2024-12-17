@@ -8,12 +8,12 @@ class Project(models.Model):
     major_field = models.CharField(max_length=100, blank=False, null=False) #대분류 - plan, design, develop + CharField에 max_length 설정 필수!
     sub_field = models.CharField(max_length=100, blank=False, null=False) #소분류 
     tags = models.JSONField(default=list)
-    skills = models.JSONField(default=list)
+    skills = models.TextField(max_length=200, blank=True, null=True)
     links = models.JSONField()
     project_img = models.JSONField(default=list)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    is_public = models.BooleanField(default=True)
+    is_public = models.CharField(max_length=10, default="fault")#BooleanField(default=True)
     liked_count = models.IntegerField(default=0)
     comment_count = models.IntegerField(default=0)
     views = models.IntegerField(default=0) #조회수 
