@@ -7,7 +7,6 @@ class Project(models.Model):
     description = models.TextField(max_length=200, blank=False, null=False)
     major_field = models.CharField(max_length=100, blank=False, null=False) #대분류 - plan, design, develop + CharField에 max_length 설정 필수!
     sub_field = models.CharField(max_length=100, blank=False, null=False) #소분류 
-    tags = models.JSONField(default=list)
     skills = models.TextField(max_length=200, blank=True, null=True)
     links = models.JSONField()
     project_img = models.JSONField(default=list)
