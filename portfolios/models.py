@@ -17,6 +17,7 @@ class Portfolio(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     is_public = models.BooleanField(default=True)
     views = models.IntegerField(default=0) #조회수 
+    username = models.CharField(max_length=50, blank=False, null=False, default="Unknown User")  # 새로 추가된 필드
     
     def __str__(self):
         return self.title

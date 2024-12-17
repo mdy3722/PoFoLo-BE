@@ -40,7 +40,7 @@ class PortfolioDetailSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'title', 'major_field', 'sub_field', 'description',
             'skills', 'experiences', 'related_projects', 'invite_url', 'created_at', 
-            'updated_at', 'is_public', 'views'
+            'updated_at', 'is_public', 'views', 'username'
         ]
         read_only_fields = ['writer', 'created_at', 'updated_at', 'views', 'invite_url']
     

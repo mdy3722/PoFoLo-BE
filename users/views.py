@@ -18,8 +18,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
-
-
 ############# function #############
 """JWT 발급 함수"""
 def get_tokens_for_user(user):
@@ -33,9 +31,6 @@ def get_tokens_for_user(user):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login(request):
-    # 디버깅: 환경 변수 출력
-    print("KAKAO_REST_API_KEY:", os.environ.get('KAKAO_REST_API_KEY'))  # REST API 키 출력
-    print("KAKAO_REDIRECT_URI:", os.environ.get('KAKAO_REDIRECT_URI'))  # 리다이렉트 URI 출력
     # 프론트엔드에서 'code'를 받음
     code = request.data.get('code')
 
@@ -90,6 +85,21 @@ def login(request):
             "message": "환영합니다! 회원가입을 완료해주세요!",
             "kakao_id": kakao_id
         }, status=status.HTTP_200_OK)
+
+"""닉네임 중복 확인"""
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def check_nickname(request):
+    nickname = request.data.get('nickname')  # POST 요청의 Body에서 닉네임 가져오기
+    
+    if not nickname:
+        return Response({"error": "닉네임을 입력해주세요."}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # 닉네임 중복 확인 로직
+    if PofoloUser.objects.filter(nickname=nickname).exists():
+        return Response({"is_available": False, "message": "이미 사용 중인 닉네임입니다."}, status=status.HTTP_200_OK)
+    else:
+        return Response({"is_available": True, "message": "사용 가능한 닉네임입니다."}, status=status.HTTP_200_OK)
 
 
 """회원가입"""

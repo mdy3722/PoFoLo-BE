@@ -4,6 +4,7 @@ from .views import *
 
 urlpatterns = [
     path('login/', login),
+    path('nickname/', register),    # 닉네임 중복 확인
     path('register/', register),
     path('profile/<int:user_id>/', manage_profile, name='profile'),
     path('logout/', logout),
