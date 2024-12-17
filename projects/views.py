@@ -32,6 +32,7 @@ class ProjectDetailView(generics.RetrieveAPIView):
     queryset = Project.objects.all()
     serializer_class = ProjectDetailSerializer
     lookup_field = 'pk'
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]  # 인증 없이 접근 가능
 
     def get_object(self):
         project = super().get_object()
