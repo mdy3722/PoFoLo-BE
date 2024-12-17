@@ -22,7 +22,12 @@ class PofoloUser(models.Model):
     links = models.JSONField(blank=True, null=True)  
     availability = models.JSONField(null=True, blank=True, default=get_default_availability)
     profile_img = models.URLField(null=True, blank=True)  # S3 이미지 URL
-  
+
+    def delete(self, *args, **kwargs):
+        if self.user:
+            self.user.delete()  # 연결된 User 객체 삭제
+        super().delete(*args, **kwargs)
+        
     def __str__(self):
         return self.nickname
     
