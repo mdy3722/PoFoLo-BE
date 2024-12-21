@@ -210,7 +210,8 @@ class MyProjectsView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Project.objects.filter(writer=self.request.user)
+        user = get_object_or_404(PofoloUser, user=self.request.user)
+        return Project.objects.filter(writer=user)
 
 # - 좋아요한 프로젝트 조회
 class LikedProjectView(generics.ListAPIView):
@@ -218,7 +219,8 @@ class LikedProjectView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        liked_projects = Like.objects.filter(user=self.request.user).values_list('project', flat=True)
+        user = get_object_or_404(PofoloUser, user=self.request.user)
+        liked_projects = Like.objects.filter(user=user).values_list('project', flat=True)
         return Project.objects.filter(id__in=liked_projects)
 
 # - 코멘트한 프로젝트 조회
@@ -227,5 +229,6 @@ class CommentedProjectView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        commented_projects = Comment.objects.filter(writer=self.request.user).values_list('project', flat=True)
+        user = get_object_or_404(PofoloUser, user=self.request.user)
+        commented_projects = Comment.objects.filter(writer=user).values_list('project', flat=True)
         return Project.objects.filter(id__in=commented_projects)
