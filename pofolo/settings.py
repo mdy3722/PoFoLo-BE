@@ -53,7 +53,7 @@ AWS_QUERYSTRING_AUTH = False
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'pofolo.site', '54.180.51.93']
 
 
 
@@ -182,7 +182,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-SECURE_SSL_REDIRECT = False  # HTTP -> HTTPS 강제 리다이렉트
-# CSRF_COOKIE_SECURE = False
-# SESSION_COOKIE_SECURE = False
-# SECURE_PROXY_SSL_HEADER = None#('HTTP_X_FORWARDED_PROTO', 'https')  # 프록시 헤더 설정
+SECURE_SSL_REDIRECT = True  # HTTP -> HTTPS 강제 리다이렉트
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+SECURE_PROXY_SSL_HEADER = None#('HTTP_X_FORWARDED_PROTO', 'https')  # 프록시 헤더 설정
