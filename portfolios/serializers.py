@@ -1,7 +1,9 @@
 from typing_extensions import Required
+from django.db.models.fields import related
 from rest_framework import serializers
 from .models import Portfolio
 from projects.models import Project
+from utils.s3_utils import generate_presigned_url
 
 class PortfolioListSerializer(serializers.ModelSerializer):
     thumbnail = serializers.SerializerMethodField()
@@ -17,7 +19,12 @@ class PortfolioListSerializer(serializers.ModelSerializer):
         for project_id in related_project_ids:
             related_project = obj.related_projects.filter(id=project_id).first()
             if related_project and related_project.project_img:
-                return related_project.project_img[0]
+                first_image_url = related_project.project_img[0]
+                try:
+                    return generate_presigned_url(first_image_url)
+                except ValueError as e:
+                    # AWS credentials이 없거나 오류가 발생할 경우 기본 URL 반환
+                    return first_image_url
         return None
 
     def get_related_projects(self, obj):

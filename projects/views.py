@@ -8,9 +8,6 @@ from django.shortcuts import get_object_or_404
 from utils.s3_utils import s3_file_upload_by_file_data
 from django.conf import settings
 from rest_framework.parsers import MultiPartParser, FormParser
-
-
-"""링크 title 태그 반환을 위한 import"""
 import requests
 from bs4 import BeautifulSoup
 from django.http import JsonResponse
@@ -21,8 +18,11 @@ class ProjectListView(generics.ListAPIView):
     serializer_class = ProjectListSerializer
 
     def get_queryset(self):
-        queryset = Project.objects.filter(is_public=True)
-        field = self.request.query_params.get('field') #filtering with major_field 
+        queryset = Project.objects.all() 
+        field = self.request.query_params.get('field')
+        is_public = self.request.query_params.get('is_public')
+        if is_public:
+            queryset = queryset.filter(is_public=is_public.lower() == 'true')
         if field:
             queryset = queryset.filter(major_field=field)
         return queryset

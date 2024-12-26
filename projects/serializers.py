@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import Project, Comment, PofoloUser
 from django.conf import settings
 from django.shortcuts import get_object_or_404
-from utils.s3_utils import s3_file_upload_by_file_data
+from utils.s3_utils import s3_file_upload_by_file_data, generate_presigned_url
 
 class ProjectListSerializer(serializers.ModelSerializer):
     writer_name = serializers.CharField(source='writer.nickname')
@@ -14,87 +14,97 @@ class ProjectListSerializer(serializers.ModelSerializer):
         'liked_count', 'comment_count', 'thumbnail', 'created_at']
 
     def get_thumbnail(self, obj):
-        return obj.project_img[0] if obj.project_img else None 
+        if obj.project_img:
+            return generate_presigned_url(obj.project_img[0])
+        return None
 
 class ProjectDetailSerializer(serializers.ModelSerializer):
-    
-    project_img = serializers.ListField(
-        child=serializers.URLField(),
-        read_only=True
-    )
+    project_img = serializers.SerializerMethodField()  # pre-signed URL 반환용 필드  
+    is_public = serializers.CharField(max_length=10, default="False")  # Keep CharField for the model
+
+    # project_img = serializers.ListField(
+    #     child=serializers.URLField(),
+    #     read_only=True
+    # )
 
     class Meta:
         model = Project
-        fields = ['id', 'writer', 'title', 'description', 'major_field', 'sub_field','skills', 'links', 
-                'project_img', 'created_at', 'is_public', 'liked_count', 'comment_count', 'views']
+        fields = [
+            'id', 'writer', 'title', 'description', 'major_field', 'sub_field', 'skills', 'links',
+            'project_img', 'created_at', 'is_public', 'liked_count', 'comment_count', 'views',
+        ]
         read_only_fields = ['id', 'writer', 'created_at', 'liked_count', 'comment_count', 'views']
 
-    def get_object(self):
-        project = super().get_object()
-        project.views += 1 #GET 요청시 조회수 증가 
-        project.save()
-        return project
-    
-    def validate_title(self, value):
-        if not value:
-            raise serializers.ValidationError("Title is required.")
-        return value
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if representation.get('is_public') == "true":
+            representation['is_public'] = True
+        elif representation.get('is_public') == "false":
+            representation['is_public'] = False
+        return representation
 
-    def validate_description(self, value):
-        if not value:
-            raise serializers.ValidationError("Description is required.")
-        return value
+    def get_project_img(self, obj):
+        """
+        `project_img`에 저장된 모든 S3 URL에 대해 Pre-signed URL을 반환.
+        """
+        if not obj.project_img:
+            return []
+        return [generate_presigned_url(img_url) for img_url in obj.project_img]
 
-    def validate_field(self, value):
-        if not value:
-            raise serializers.ValidationError("Field is required.")
-        return value
-    
     def create(self, validated_data):
         request = self.context['request']
         writer = get_object_or_404(PofoloUser, user=request.user)
         project_img_files = request.FILES.getlist('project_img')
+
+        if len(project_img_files) > 10:
+            raise serializers.ValidationError("최대 10개의 이미지만 업로드할 수 있습니다.")
+
+        # 프로젝트 생성
         project = Project.objects.create(writer=writer, **validated_data)
-        
-        # S3 업로드 로직
-        uploaded_urls = []
-        for img_file in project_img_files:
-            uploaded_url = s3_file_upload_by_file_data(
-                upload_file=img_file,
-                region_name=settings.AWS_S3_REGION_NAME,
-                bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
-                bucket_path=f"project/{project.id}"
-            )
-            print(f"Uploaded URL: {uploaded_url}")
-            if uploaded_url:
-                uploaded_urls.append(uploaded_url)
-        print(f"Uploaded URLs: {uploaded_urls}")
+
+        # S3 업로드 및 URL 생성
+        uploaded_urls = self.upload_images_to_s3(project_img_files, project.id)
         project.project_img = uploaded_urls
         project.save()
         return project
 
     def update(self, instance, validated_data):
         request = self.context['request']
-        image_files = request.FILES.getlist('project_img')  # 새로운 이미지 업로드 요청 확인
+        project_img_files = request.FILES.getlist('project_img')
 
-        if image_files:
-            image_urls = instance.project_img or []
-            for image_file in image_files[:10 - len(image_urls)]:  # 기존 이미지와 합쳐 최대 10개 제한
-                uploaded_url = s3_file_upload_by_file_data(
-                    upload_file=image_file,
-                    region_name=settings.AWS_S3_REGION_NAME,
-                    bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
-                    bucket_path=f"project/images/{instance.writer.id}"
-                )
-                if uploaded_url:
-                    image_urls.append(uploaded_url)
-            validated_data['project_img'] = image_urls
+        if project_img_files:
+            # 기존 이미지와 새로 업로드한 이미지를 합쳐 최대 10개 제한
+            existing_images = instance.project_img or []
+            if len(existing_images) + len(project_img_files) > 10:
+                raise serializers.ValidationError("최대 10개의 이미지만 업로드할 수 있습니다.")
+
+            # 새 이미지 업로드
+            new_uploaded_urls = self.upload_images_to_s3(project_img_files, instance.id)
+            validated_data['project_img'] = existing_images + new_uploaded_urls
 
         # 다른 필드 업데이트
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
         return instance
+
+    def upload_images_to_s3(self, image_files, project_id):
+        """
+        S3에 이미지를 업로드하고 업로드된 URL을 반환합니다.
+        """
+        uploaded_urls = []
+        for img_file in image_files:
+            uploaded_url = s3_file_upload_by_file_data(
+                upload_file=img_file,
+                region_name=settings.AWS_S3_REGION_NAME,
+                bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
+                bucket_path=f"project/{project_id}"
+            )
+            if uploaded_url:
+                uploaded_urls.append(uploaded_url)
+            else:
+                raise serializers.ValidationError("S3 업로드에 실패했습니다.")
+        return uploaded_urls
 
 """댓글"""
 class CommentSerializer(serializers.ModelSerializer):

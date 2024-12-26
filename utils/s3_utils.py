@@ -1,5 +1,7 @@
 import boto3, random, string
 from datetime import datetime
+from botocore.exceptions import NoCredentialsError
+from urllib.parse import urlparse
 from django.conf import settings
 
 def get_random_text(prefix='', length=10):
@@ -46,3 +48,66 @@ def s3_file_upload_by_file_data(upload_file, region_name, bucket_name, bucket_pa
         return f"https://{bucket_name}.s3.{region_name}.amazonaws.com/{bucket_path}/{random_file_name}"
 
     return False
+
+def generate_presigned_url(s3_url, expiration=3600):
+    """
+    S3 URL을 pre-signed URL로 변환합니다.
+    """
+    s3_client = boto3.client(
+        's3',
+        region_name=settings.AWS_S3_REGION_NAME,
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+    )
+
+    # URL 파싱
+    parsed_url = urlparse(s3_url)
+    bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+
+    # S3 객체 키 추출
+    if parsed_url.netloc.endswith(f"{bucket_name}.s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com"):
+        # https://<bucket_name>.s3.<region>.amazonaws.com/<object_key> 형식
+        object_key = parsed_url.path.lstrip('/')
+    elif parsed_url.netloc == f"s3.{settings.AWS_S3_REGION_NAME}.amazonaws.com":
+        # https://s3.<region>.amazonaws.com/<bucket_name>/<object_key> 형식
+        object_key = parsed_url.path.lstrip('/').split(f"{bucket_name}/")[-1]
+    else:
+        raise ValueError("Invalid S3 URL format")
+
+    # Pre-signed URL 생성
+    try:
+        response = s3_client.generate_presigned_url(
+            'get_object',
+            Params={'Bucket': bucket_name, 'Key': object_key},
+            ExpiresIn=expiration,
+        )
+        return response
+    except NoCredentialsError:
+        raise ValueError("AWS credentials not available")
+        
+# def generate_presigned_url(s3_url, expiration=3600):
+#     """
+#     S3 URL을 pre-signed URL로 변환합니다.
+#     """
+#     s3_client = boto3.client(
+#         's3',
+#         region_name=settings.AWS_S3_REGION_NAME,
+#         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+#         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+#     )
+
+#     bucket_name = settings.AWS_STORAGE_BUCKET_NAME
+#     try:
+#         object_key = s3_url.split(f"{bucket_name}/")[1]  # S3 객체 키 추출
+#     except IndexError:
+#         raise ValueError("Invalid S3 URL format")
+
+#     try:
+#         response = s3_client.generate_presigned_url(
+#             'get_object',
+#             Params={'Bucket': bucket_name, 'Key': object_key},
+#             ExpiresIn=expiration,
+#         )
+#         return response
+#     except NoCredentialsError:
+#         raise ValueError("AWS credentials not available")

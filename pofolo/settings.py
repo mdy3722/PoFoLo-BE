@@ -53,7 +53,8 @@ AWS_QUERYSTRING_AUTH = False
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+
 
 
 # Application definition
@@ -99,13 +100,14 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
-#CORS_ALLOWED_ORIGINS = [
-#    "http://localhost:3000",  # 프론트엔드 주소
-#    "http://127.0.0.1:3000",
-#]
+CORS_ALLOWED_ORIGINS = [
+   "http://localhost:3000",  # 프론트엔드 주소
+   "http://127.0.0.1:3000",
+    "http://127.0.0.1:8000",
+]
 
 ROOT_URLCONF = 'pofolo.urls'
 
@@ -180,7 +182,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-SECURE_SSL_REDIRECT = True  # HTTP -> HTTPS 강제 리다이렉트
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # 프록시 헤더 설정
+SECURE_SSL_REDIRECT = False  # HTTP -> HTTPS 강제 리다이렉트
+# CSRF_COOKIE_SECURE = False
+# SESSION_COOKIE_SECURE = False
+# SECURE_PROXY_SSL_HEADER = None#('HTTP_X_FORWARDED_PROTO', 'https')  # 프록시 헤더 설정
