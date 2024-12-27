@@ -18,7 +18,7 @@ class PortfolioListView(generics.ListAPIView):
         return queryset
 
 # 포트폴리오 상세내용 조회/수정/삭제 
-class PortfolioDetailView(generics.RetrieveAPIView):
+class PortfolioDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Portfolio.objects.all()
     serializer_class = PortfolioDetailSerializer
     permission_classes = [permissions.IsAuthenticated]
