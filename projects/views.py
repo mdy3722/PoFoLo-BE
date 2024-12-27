@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404
 from utils.s3_utils import s3_file_upload_by_file_data
 from django.conf import settings
 from rest_framework.parsers import MultiPartParser, FormParser
-import requests
+import json
 from bs4 import BeautifulSoup
 from django.http import JsonResponse
 
@@ -56,44 +56,73 @@ class ProjectCreateAndImageUploadView(APIView):
         return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 class ProjectImageManageView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [IsAuthenticated]
+
     def patch(self, request, project_id):
-        project = get_object_or_404(Project, id=project_id)
-        pofolo_user = get_object_or_404(PofoloUser, user=self.request.user)
-        # 권한 체크
-        if pofolo_user != project.writer:
-            return Response({"error": "권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
+        user = get_object_or_404(PofoloUser, user=self.request.user)
+        project = get_object_or_404(Project, id=project_id, writer=user)
+        delete_indices = request.data.get('delete', '[]')
 
-        # 기존 이미지 가져오기
-        current_images = project.project_img or []
+        try:
+            delete_indices = json.loads(delete_indices)  # JSON 문자열로 받은 삭제 인덱스 리스트 파싱
+        except json.JSONDecodeError:
+            return Response({'error': 'Invalid delete indices format'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 새 이미지 추가 처리
-        new_images = request.FILES.getlist('new_images', [])
-        for image_file in new_images:
-            if len(current_images) >= 10:  # 최대 10개 제한
-                return Response({"error": "이미지는 최대 10개까지만 업로드할 수 있습니다."}, status=status.HTTP_400_BAD_REQUEST)
+        # 1. 교체 작업 처리
+        for key, image_file in request.FILES.items():
+            if key.startswith('replace[') and key.endswith(']'):
+                try:
+                    index = int(key[8:-1])  # 'replace[0]' -> 0
+                except ValueError:
+                    return Response({'error': f"Invalid replace key: {key}"}, status=status.HTTP_400_BAD_REQUEST)
+                if index < 0 or index >= len(project.project_img):
+                    return Response({'error': f"Invalid index {index} for replace"}, status=status.HTTP_400_BAD_REQUEST)
 
+                # 새 이미지 업로드
+                uploaded_url = s3_file_upload_by_file_data(
+                    upload_file=image_file,
+                    region_name=settings.AWS_S3_REGION_NAME,
+                    bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
+                    bucket_path=f"project/images/{project_id}"
+                )
+                project.project_img[index] = uploaded_url
+
+        # 2. 삭제 작업 처리
+        delete_indices = sorted(delete_indices, reverse=True)  # 역순으로 정렬하여 삭제
+        for index in delete_indices:
+            if index < 0 or index >= len(project.project_img):
+                return Response({'error': f"Invalid index {index} for delete"}, status=status.HTTP_400_BAD_REQUEST)
+            project.project_img.pop(index)
+
+        project.save()
+        return Response({'message': 'Images updated successfully', 'project_images': project.project_img}, status=status.HTTP_200_OK)
+
+    def post(self, request, project_id):
+        user = get_object_or_404(PofoloUser, user=self.request.user)
+        project = get_object_or_404(Project, id=project_id, writer=user)
+        if len(project.project_img) >= 10:
+            return Response({'error': 'Maximum 10 images allowed'}, status=status.HTTP_400_BAD_REQUEST)
+
+        image_files = request.FILES.getlist('images')
+        if not image_files:
+            return Response({'error': 'No images provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 업로드된 이미지 추가
+        for img_file in image_files:
+            if len(project.project_img) >= 10:
+                break 
             uploaded_url = s3_file_upload_by_file_data(
-                upload_file=image_file,
+                upload_file=img_file,
                 region_name=settings.AWS_S3_REGION_NAME,
                 bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
-                bucket_path=f"project/images/{project.writer.id}"
+                bucket_path=f"project/images/{project_id}"
             )
-            if uploaded_url:
-                current_images.append(uploaded_url)
+            project.project_img.append(uploaded_url)
 
-        # 삭제 이미지 처리
-        delete_images = request.data.get('delete_images', [])
-        current_images = [img for img in current_images if img not in delete_images]
-
-        # 변경된 이미지 저장
-        project.project_img = current_images
         project.save()
+        return Response({'message': 'Images added successfully', 'project_images': project.project_img}, status=status.HTTP_200_OK)
 
-        serializer = ProjectDetailSerializer(project)
-        return Response({
-            "message": "이미지 수정 성공",
-            "project": serializer.data
-        }, status=status.HTTP_200_OK)
 
 # - 좋아요 누르기
 class LikeProjectView(APIView):
