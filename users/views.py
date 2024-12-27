@@ -147,9 +147,6 @@ def register(request):
 def manage_profile(request, user_id):
     user = get_object_or_404(PofoloUser, id=user_id)
 
-    if request.user.id != user.id:
-        return Response({"error": "권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
-
     # 프로필 조회
     if request.method == 'GET':
         serializer = UserSerializer(user)
@@ -160,6 +157,9 @@ def manage_profile(request, user_id):
     
     # 프로필 수정
     elif request.method == 'PATCH':
+        if request.user.id != user.id:
+          return Response({"error": "권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
+    
         serializer = UserSerializer(user, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
             serializer.save()

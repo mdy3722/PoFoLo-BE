@@ -28,7 +28,7 @@ class ProjectListView(generics.ListAPIView):
         return queryset
 
 # - 프로젝트 세부내용 조회
-class ProjectDetailView(generics.RetrieveAPIView):
+class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Project.objects.all()
     serializer_class = ProjectDetailSerializer
     lookup_field = 'pk'
