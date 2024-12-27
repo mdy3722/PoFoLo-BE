@@ -210,6 +210,8 @@ class CommentListView(APIView):
         serializer = CommentSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(writer=pofolo_user, project=project, parent_comment=parent_comment)
+            project.comment_count += 1
+            project.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -229,7 +231,14 @@ class CommentDeleteView(APIView):
             return Response({"error": "You do not have permission to delete this comment"}, status=status.HTTP_403_FORBIDDEN)
 
         # 댓글 삭제
+        project = comment.project
         comment.delete()
+    
+        project.comment_count -= 1
+        if project.comment_count < 0:
+            project.comment_count = 0
+        project.save()
+
         return Response({"message": "Comment deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
     
 # MyPage
