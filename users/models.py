@@ -21,7 +21,6 @@ class PofoloUser(models.Model):
     introduction = models.TextField(blank=True, null=True)
     links = models.JSONField(blank=True, null=True)  
     availability = models.JSONField(null=True, blank=True, default=get_default_availability)
-    profile_img = models.URLField(null=True, blank=True)  # S3 이미지 URL
 
     def delete(self, *args, **kwargs):
         if self.user:
@@ -33,21 +32,4 @@ class PofoloUser(models.Model):
     
     class Meta:
         db_table = 'users'
-
-    def upload_profile_image(user, file):
-        bucket_name = settings.AWS_STORAGE_BUCKET_NAME
-        region_name = settings.AWS_S3_REGION_NAME
-        bucket_path = f"user/profile_images/{user.id}"
-    
-        uploaded_url = s3_utils.s3_file_upload_by_file_data(
-            upload_file=file,
-            region_name=region_name,
-            bucket_name=bucket_name,
-            bucket_path=bucket_path
-        )
-        if not uploaded_url:
-           raise ValueError("Failed to upload profile image to S3")
-        user.profile_img = uploaded_url
-        user.save()
-        return uploaded_url
 
