@@ -22,11 +22,6 @@ class ProjectDetailSerializer(serializers.ModelSerializer):
     project_img = serializers.SerializerMethodField()  # pre-signed URL 반환용 필드  
     is_public = serializers.CharField(max_length=10, default="False")  # Keep CharField for the model
 
-    # project_img = serializers.ListField(
-    #     child=serializers.URLField(),
-    #     read_only=True
-    # )
-
     class Meta:
         model = Project
         fields = [
