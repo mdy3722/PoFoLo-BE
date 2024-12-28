@@ -9,6 +9,7 @@ from utils.s3_utils import s3_file_upload_by_file_data
 from django.conf import settings
 from rest_framework.parsers import MultiPartParser, FormParser
 import json
+import requests
 from bs4 import BeautifulSoup
 from django.http import JsonResponse
 
@@ -232,9 +233,17 @@ class CommentDeleteView(APIView):
 
         # 댓글 삭제
         project = comment.project
-        comment.delete()
-    
-        project.comment_count -= 1
+        if comment.replies.exists():  # 댓글이 답글(자식 댓글)을 가지고 있는 경우
+            replies_count = comment.replies.count()
+            comment.delete()  # 부모 댓글 및 답글 삭제
+            project.comment_count -= (1 + replies_count)  # 부모 댓글 + 답글 수만큼 차감
+        elif comment.parent_comment:  # 댓글이 부모 댓글의 답글인 경우
+            comment.delete()  # 해당 답글만 삭제
+            project.comment_count -= 1  # 답글 하나만 차감
+        else:  # 일반 댓글 삭제
+            comment.delete()
+            project.comment_count -= 1
+
         if project.comment_count < 0:
             project.comment_count = 0
         project.save()
