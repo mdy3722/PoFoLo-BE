@@ -11,7 +11,7 @@ class PortfolioListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Portfolio
-        fields = ['id','title', 'thumbnail', 'created_at', 'related_projects']
+        fields = ['id', 'writer', 'title', 'thumbnail', 'created_at', 'related_projects']
 
     def get_thumbnail(self, obj):
         related_project_ids = self.context['request'].data.get('related_projects', [])
@@ -45,7 +45,7 @@ class PortfolioDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Portfolio
         fields = [
-            'id', 'title', 'major_field', 'sub_field', 'description',
+            'id', 'writer', 'title', 'major_field', 'sub_field', 'description',
             'skills', 'experiences', 'related_projects', 'invite_url', 'created_at', 
             'updated_at', 'is_public', 'views', 'username'
         ]
