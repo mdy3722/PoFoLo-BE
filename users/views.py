@@ -1,6 +1,7 @@
 """.env에서 SECRET 정보를 가져옴"""
 from dotenv import load_dotenv
 import os
+from rest_framework.views import APIView
 load_dotenv()
 import requests
 from rest_framework.decorators import api_view, permission_classes
@@ -11,6 +12,9 @@ from .serializers import UserSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.parsers import MultiPartParser, FormParser
+from utils.s3_utils import s3_file_upload_by_file_data
+from django.conf import settings
 
 ############# function #############
 """JWT 발급 함수"""
@@ -168,6 +172,71 @@ def manage_profile(request, user_id):
                 "profile": serializer.data
             }, status=status.HTTP_200_OK)
         return Response({"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+class UploadProfileImageView(APIView):
+    parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = get_object_or_404(PofoloUser, user=request.user)
+        profile_img_file = request.FILES.get('profile_img')
+
+        if not profile_img_file:
+            return Response({'error': 'No image file provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # S3 업로드
+        uploaded_url = s3_file_upload_by_file_data(
+            upload_file=profile_img_file,
+            region_name=settings.AWS_S3_REGION_NAME,
+            bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
+            bucket_path=f"profile/{user.id}"
+        )
+        if not uploaded_url:
+            return Response({'error': 'Failed to upload image to S3'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        user.profile_img = uploaded_url
+        user.save()
+        return Response({'message': 'Profile image uploaded successfully', 'profile_img': uploaded_url}, status=status.HTTP_200_OK)
+
+
+class ManageProfileImageView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, user_id):
+        user = get_object_or_404(PofoloUser, user=request.user)
+        if user.id != user_id:
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+
+        profile_img_file = request.FILES.get('profile_img')
+        if not profile_img_file:
+            return Response({'error': 'No image file provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # S3 업로드
+        uploaded_url = s3_file_upload_by_file_data(
+            upload_file=profile_img_file,
+            region_name=settings.AWS_S3_REGION_NAME,
+            bucket_name=settings.AWS_STORAGE_BUCKET_NAME,
+            bucket_path=f"profile/{user.id}"
+        )
+        if not uploaded_url:
+            return Response({'error': 'Failed to upload image to S3'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        user.profile_img = uploaded_url
+        user.save()
+        return Response({'message': 'Profile image updated successfully', 'profile_img': uploaded_url}, status=status.HTTP_200_OK)
+
+    def delete(self, request, user_id):
+        user = get_object_or_404(PofoloUser, user=request.user)
+        if user.id != user_id:
+            return Response({'error': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+
+        if not user.profile_img:
+            return Response({'error': 'No profile image to delete'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.profile_img = None
+        user.save()
+        return Response({'message': 'Profile image deleted successfully'}, status=status.HTTP_200_OK)
+
 
 """로그아웃"""
 @api_view(['POST'])

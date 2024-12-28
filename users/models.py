@@ -6,7 +6,6 @@ from utils import s3_utils
 def get_default_availability():     # 가용성 디폴트 값 반환
     return ["제안 받지 않음"]
 
-# Create your models here.
 class PofoloUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='pofolo_user', null=True)  # 기본 User 모델과 연결 - 연결 안하면 장고가 유저 관련 로직을 장고 자체 유저에 적용하려고 함
     kakao_id = models.CharField(max_length=50, unique=True)  # 카카오 ID를 고유 식별자로 사용 -> 기존 회원인지, 신규 회원인지 확인 용
@@ -21,6 +20,7 @@ class PofoloUser(models.Model):
     introduction = models.TextField(blank=True, null=True)
     links = models.JSONField(blank=True, null=True)  
     availability = models.JSONField(null=True, blank=True, default=get_default_availability)
+    profile_img = models.URLField(null=True, blank=True) # S3 이미지 URL
 
     def delete(self, *args, **kwargs):
         if self.user:
