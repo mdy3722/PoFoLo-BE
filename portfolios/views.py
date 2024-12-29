@@ -10,14 +10,12 @@ class PortfolioListView(generics.ListAPIView):
 
     def get_queryset(self):
         user = get_object_or_404(PofoloUser, user=self.request.user)
-        queryset = Portfolio.objects.filter(is_public=True)  # 공개된 포트폴리오 기본 조회
-
-        # URL에서 특정 user_id가 전달된 경우 해당 사용자의 포트폴리오 필터링
         user_id = self.kwargs.get('user_id')
+        
         if user_id:
-            queryset = queryset.filter(writer__id=user_id)
+            queryset = Portfolio.objects.filter(writer__id=user_id, is_public=True)
         else:
-            queryset = queryset.filter(writer=user)
+            queryset = Portfolio.objects.filter(writer=user)
         return queryset
 
 # 포트폴리오 상세내용 조회/수정/삭제 
