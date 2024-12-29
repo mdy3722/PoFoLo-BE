@@ -1,7 +1,8 @@
 from rest_framework import generics, permissions
 from django.shortcuts import get_object_or_404
-from .models import Portfolio, PofoloUser
+from .models import Portfolio, PofoloUser, Project
 from .serializers import PortfolioListSerializer, PortfolioDetailSerializer
+from utils.s3_utils import generate_presigned_url
 
 # 포트폴리오 리스트 조회
 class PortfolioListView(generics.ListAPIView):
@@ -41,7 +42,31 @@ class PortfolioCreateView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         user = get_object_or_404(PofoloUser, user=self.request.user)
-        serializer.save(writer=user)
+        related_projects = self.request.data.get('related_projects', [])
+        thumbnail_url = None
+
+        # # 썸네일 이미지 URL 설정
+        for project_id in related_projects:
+            related_project = Project.objects.filter(id=project_id).first()
+            if related_project and related_project.project_img:
+                first_image_url = related_project.project_img[0]
+                try:
+                    thumbnail_url = generate_presigned_url(first_image_url)
+                except ValueError:
+                    thumbnail_url = ""
+
+        # Portfolio 객체 저장 (id가 생성됨)
+        portfolio = serializer.save(writer=user, thumbnail=thumbnail_url)
+
+        # Many-to-Many 관계 추가: 포트폴리오가 저장된 후에 추가해야 함
+        for project_id in related_projects:
+            related_project = Project.objects.filter(id=project_id).first()
+            if related_project:
+                portfolio.related_projects.add(related_project)
+
+        # portfolio.save()를 호출하여 데이터베이스에 반영
+        portfolio.save()
+
 
 # 포트폴리오 초대 URL 조회
 class PortfolioInviteView(generics.RetrieveAPIView):

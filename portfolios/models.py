@@ -12,6 +12,7 @@ class Portfolio(models.Model):
     skills = models.TextField(blank=False, null=False)
     experiences = models.JSONField(default=list)
     related_projects = models.ManyToManyField(Project, related_name="portfolios")  # 연결된 프로젝트들
+    thumbnail = models.URLField(blank=True, null=True, default="")
     invite_url = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)  # 초대용 랜덤 URL
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
