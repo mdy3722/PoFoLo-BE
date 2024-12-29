@@ -18,5 +18,5 @@ urlpatterns = [
     path('<int:project_id>/comments/', CommentListView.as_view(), name='project-comment-create'), # 댓글(및 답글) 작성
     path('comments/<int:comment_id>/', CommentDeleteView.as_view(), name='project-comment-delete'), # 댓글 삭제
     path('links/', LinkTitleView.as_view(), name='link-title'),   # 링크를 받아 <title> 태그값을 반환
-    path('watch/<int:user_id>/', ProjectListView.as_view(), name='project-list') #다른사람 프로젝트 리스트 조회
+    path('watch/<int:writer>/', ProjectListView.as_view(), name='project-list') #다른사람 프로젝트 리스트 조회
 ]
