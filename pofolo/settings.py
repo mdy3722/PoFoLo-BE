@@ -45,7 +45,8 @@ AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
 AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME')
 
 DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
-STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+# 정적 파일은 로컬에서 제공
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 AWS_S3_CUSTOM_DOMAIN = AWS_STORAGE_BUCKET_NAME + ".s3." + AWS_S3_REGION_NAME + ".amazonaws.com"
 AWS_S3_FILE_OVERWRITE = False
 AWS_QUERYSTRING_AUTH = False
@@ -53,7 +54,7 @@ AWS_QUERYSTRING_AUTH = False
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'pofolo.site', '54.180.51.93', 'www.pofolo.site']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'pofolo.site', 'www.pofolo.site', '54.180.51.93']
 
 
 
@@ -175,8 +176,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = 'static/'
-
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
@@ -185,4 +186,4 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SECURE_SSL_REDIRECT = True  # HTTP -> HTTPS 강제 리다이렉트
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SECURE = True
-SECURE_PROXY_SSL_HEADER = None#('HTTP_X_FORWARDED_PROTO', 'https')  # 프록시 헤더 설정
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # 프록시 헤더 설정
