@@ -12,7 +12,7 @@ class PofoloUser(models.Model):
     nickname = models.CharField(max_length=50, unique=True)  # 이름(별명)
     education = models.CharField(max_length=50, null=False, blank=False)   # 학력
     education_is_public = models.BooleanField(default=True)  # 학력 공개 디폴트
-    main_field = models.CharField(max_length=10, choices=[('기획', '기획'), ('디자인', '디자인'), ('개발', '개발발')], default='plan')
+    main_field = models.CharField(max_length=10, choices=[('기획', '기획'), ('디자인', '디자인'), ('개발', '개발')], default='plan')
     phone_num = models.CharField(max_length=15, blank=True, null=True)
     phone_num_is_public = models.BooleanField(default=False)  # 전화번호 비공개 디폴트
     email = models.EmailField(blank=True, null=True)
