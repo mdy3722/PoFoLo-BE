@@ -112,7 +112,7 @@ def register(request):
     main_field = request.data.get('main_field')
 
     # 필수 데이터가 모두 있는지 확인
-    if not kakao_id or not nickname or not education or not education_is_public or not main_field:
+    if any(value is None for value in [kakao_id, nickname, education, main_field]) or education_is_public is None:
         return Response({"error": "All fields are required"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
