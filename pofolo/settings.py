@@ -53,7 +53,7 @@ AWS_QUERYSTRING_AUTH = False
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'pofolo.site', '54.180.51.93']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'pofolo.site', '54.180.51.93', 'www.pofolo.site']
 
 
 
