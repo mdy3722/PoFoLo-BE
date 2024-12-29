@@ -1,0 +1,28 @@
+server {
+    listen 80;
+    server_name 54.180.51.93 pofolo.site www.pofolo.site; # EC2 퍼블릭 IP 주소
+
+    return 301 https://pofolo.site$request_uri;
+}
+
+server{
+    listen 443 ssl;
+    server_name pofolo.site www.pofolo.site;
+
+    ssl_certificate /etc/letsencrypt/live/pofolo.site/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/pofolo.site/privkey.pem;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    location / {
+        proxy_pass http://unix:/run/gunicorn.sock;
+        include proxy_params;
+	proxy_set_header X-Forwarded-Proto https;
+    }
+
+    location /static/ {
+        root /var/www;
+    }
+}
+
