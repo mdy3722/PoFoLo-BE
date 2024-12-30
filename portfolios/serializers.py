@@ -7,6 +7,8 @@ from utils.s3_utils import generate_presigned_url
 
 class PortfolioListSerializer(serializers.ModelSerializer):
     related_projects = serializers.SerializerMethodField()
+    thumbnail = serializers.SerializerMethodField()  # Custom 처리
+
 
     class Meta:
         model = Portfolio
@@ -23,6 +25,17 @@ class PortfolioListSerializer(serializers.ModelSerializer):
             return [project.id for project in ordered_projects]
         
         return [project.id for project in obj.related_projects.all()]
+
+    def get_thumbnail(self, obj):
+        related_projects = obj.related_projects.all()
+        for related_project in related_projects:
+            if related_project.project_img:
+                first_image_url = related_project.project_img[0]
+                try:
+                    return generate_presigned_url(first_image_url)
+                except ValueError:
+                    continue  # Presigned URL 생성 실패 시 다음 프로젝트로 이동
+        return None
 
 class PortfolioDetailSerializer(serializers.ModelSerializer):
     related_projects = serializers.PrimaryKeyRelatedField(queryset=Project.objects.all(), many=True)
