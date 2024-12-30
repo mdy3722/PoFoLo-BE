@@ -21,16 +21,15 @@ class ProjectListView(generics.ListAPIView):
     def get_queryset(self):
         queryset = Project.objects.all() 
         field = self.request.query_params.get('field')
-        is_public = self.request.query_params.get('is_public')
         writer_id = self.kwargs.get('writer')
-        if is_public:
-            queryset = queryset.filter(is_public=is_public.lower() == 'true')
         if field:
             queryset = queryset.filter(major_field=field)
         if writer_id:
             queryset = queryset.filter(writer_id=writer_id)
+        queryset = queryset.exclude(is_public="false")
         return queryset
 
+        
 # - 프로젝트 세부내용 조회
 class ProjectDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Project.objects.all()
