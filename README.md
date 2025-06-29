@@ -82,7 +82,7 @@
 
 ### ERD
 
-<img src="./docs/pofolo-ERD.png" alt="PoFoLo ERD" />
+<img src="./docs/pofolo-ER다이어그램.png" alt="PoFoLo ERD" />
 
 ---
 
