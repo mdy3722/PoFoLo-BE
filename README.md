@@ -3,7 +3,7 @@
 > 개발자, 디자이너, 기획자 등 다양한 IT 취업 준비생들이 자신이 수행한 프로젝트를 등록하고, 포트폴리오로 묶어 협업 기회를 모색할 수 있도록 돕는 웹 기반 서비스입니다.
 
 🔗 서비스 주소: [https://pofolo.site/](https://pofolo.site/)  
-![status](https://img.shields.io/badge/Status-서비스_중단-gray)
+**🛑 현재는 서비스 운영이 중단되었습니다.**
 
 ---
 
@@ -82,7 +82,7 @@
   ![댓글](./docs/pofolo-댓글.png)
 
 - **프로젝트 상세 보기**  
-  ![프로젝트 상세](./docs/pofolo-프로젝트 상세 화면.png)
+  ![프로젝트 상세](./docs/pofolo-프로젝트%20상세%20화면.png)
   
 </details>
 
