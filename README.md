@@ -64,6 +64,7 @@
 
 <details>
 <summary><b>메인 화면 및 주요 UI</b></summary>
+  
 - **메인 페이지**  
   ![메인 화면](./docs/pofolo-mainUI.png)
 
