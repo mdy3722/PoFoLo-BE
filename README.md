@@ -13,7 +13,7 @@
 |------|------|
 | ⏰ 개발 기간 | 2024.10 ~ 2024.12 |
 | 👨‍👩‍👧‍👦 참여 인원 | 총 7명 (기획 1, 디자인 1, 프론트 3, 백엔드 2) |
-| 🧩 주요 기능 | 포트폴리오 생성 및 공유, 프로젝트 필터링 검색, (협업 제안을 위한)가용성 표시, 카카오 소셜 로그인 |
+| 🧩 주요 기능 | 포트폴리오 생성 및 공유, 프로젝트 필터링 검색, 가용성 표시, 카카오 소셜 로그인 |
 
 ---
 
@@ -51,12 +51,11 @@
   <img src="https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white"/>
   <img src="https://img.shields.io/badge/Django-092E20?style=flat&logo=django&logoColor=white"/>
   <img src="https://img.shields.io/badge/SQLite-003B57?style=flat&logo=sqlite&logoColor=white"/>
-  <img src="https://img.shields.io/badge/AWS EC2-FF9900?style=flat&logo=amazonaws&logoColor=white"/>
-  <img src="https://img.shields.io/badge/AWS S3-569A31?style=flat&logo=amazonaws&logoColor=white"/>
+  <img src="https://img.shields.io/badge/AWS EC2-%23FF9900?style=flat&logo=amazon-ec2&logoColor=white"/>
+  <img src="https://img.shields.io/badge/AWS S3-%2398BF64?style=flat&logo=amazon-s3&logoColor=white"/>
   <img src="https://img.shields.io/badge/Gunicorn-499848?style=flat"/>
   <img src="https://img.shields.io/badge/Nginx-009639?style=flat&logo=nginx&logoColor=white"/>
   <img src="https://img.shields.io/badge/Postman-FF6C37?style=flat&logo=postman&logoColor=white"/>
-  <img src="https://img.shields.io/badge/GitHub-181717?style=flat&logo=github&logoColor=white"/>
 </p>
 
 <br/>
