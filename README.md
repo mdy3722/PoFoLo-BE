@@ -64,7 +64,10 @@
 
 <details>
 <summary><b>메인 화면 및 주요 UI</b></summary>
-<img src="./docs/pofolo-mainUI.png" />
+<figure>
+  <img src="./docs/pofolo-mainUI.png" />
+  <figcaption>메인 화면</figcaption>
+</figure>
 <img src="./docs/pofolo-포트폴리오.png" />
 <img src="./docs/pofolo-마이페이지.png" />
 <img src="./docs/pofolo-가용성.png" />
