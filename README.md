@@ -43,7 +43,7 @@
   - Gunicorn + Nginx 기반 WSGI 서버 구성 및 HTTPS 인증서 적용
   - 프론트엔드(Vercel)와의 연동을 위한 리버스 프록시 및 CORS 설정
 
-<br/>
+---
 
 ### 기술 스택
 
@@ -58,12 +58,12 @@
   <img src="https://img.shields.io/badge/Postman-FF6C37?style=flat&logo=postman&logoColor=white"/>
 </p>
 
-<br/>
+---
 
-## 🖼 UI 및 아키텍처 이미지 (클릭하여 확인)
+### 서비스 UI
 
 <details>
-<summary><b>📌 메인 화면 및 주요 UI</b></summary>
+<summary><b>메인 화면 및 주요 UI</b></summary>
 <img src="./docs/pofolo-mainUI.png" />
 <img src="./docs/pofolo-포트폴리오.png" />
 <img src="./docs/pofolo-마이페이지.png" />
@@ -72,24 +72,27 @@
 <img src="./docs/pofolo-프로젝트 상세 화면.png" />
 </details>
 
-<details>
-<summary><b>📌 시스템 아키텍처</b></summary>
-<img src="./docs/pofolo-시스템아키텍처.png" />
-</details>
+---
 
-<details>
-<summary><b>📌 ERD</b></summary>
-<img src="./docs/pofolo-ERD.png" />
-</details>
+### 시스템 아키텍처
 
-<details>
-<summary><b>📌 Kakao 로그인 플로우</b></summary>
-<img src="./docs/pofolo-소셜로그인.png" />
-</details>
+<img src="./docs/pofolo-시스템아키텍처.png" alt="PoFoLo 시스템 아키텍처" />
 
-<br/>
+---
 
-## 📚 회고
+### ERD
+
+<img src="./docs/pofolo-ERD.png" alt="PoFoLo ERD" />
+
+---
+
+### Kakao 로그인 플로우
+
+<img src="./docs/pofolo-소셜로그인.png" alt="카카오 로그인 플로우" />
+
+---
+
+### 회고
 
 > 실무에 가까운 OAuth 인증, 이미지 업로드, S3 연동, 배포 환경 구성까지 경험하며 백엔드 전반의 흐름을 주도적으로 설계하고 구현하였습니다. 단순한 기능 구현을 넘어 API 명세 작성과 협업 커뮤니케이션 등 실서비스 개발의 핵심 과정을 직접 리딩했던 경험이었습니다.
 
