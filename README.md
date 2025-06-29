@@ -64,15 +64,23 @@
 
 <details>
 <summary><b>메인 화면 및 주요 UI</b></summary>
-<figure>
-  <img src="./docs/pofolo-mainUI.png" />
-  <figcaption>메인 화면</figcaption>
-</figure>
-<img src="./docs/pofolo-포트폴리오.png" />
-<img src="./docs/pofolo-마이페이지.png" />
-<img src="./docs/pofolo-가용성.png" />
-<img src="./docs/pofolo-댓글.png" />
-<img src="./docs/pofolo-프로젝트 상세 화면.png" />
+- **메인 페이지**  
+  ![메인 화면](./docs/pofolo-mainUI.png)
+
+- **포트폴리오 상세 화면**  
+  ![포트폴리오](./docs/pofolo-포트폴리오.png)
+
+- **마이페이지 - 내 정보 관리**  
+  ![마이페이지](./docs/pofolo-마이페이지.png)
+
+- **가용성 설정 페이지**  
+  ![가용성](./docs/pofolo-가용성.png)
+
+- **댓글 / 대댓글 기능**  
+  ![댓글](./docs/pofolo-댓글.png)
+
+- **프로젝트 상세 보기**  
+  ![프로젝트 상세](./docs/pofolo-프로젝트 상세 화면.png)
 </details>
 
 ---
