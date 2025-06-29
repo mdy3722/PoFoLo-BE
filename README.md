@@ -3,7 +3,7 @@
 > 개발자, 디자이너, 기획자 등 다양한 IT 취업 준비생들이 자신이 수행한 프로젝트를 등록하고, 포트폴리오로 묶어 협업 기회를 모색할 수 있도록 돕는 웹 기반 서비스입니다.
 
 🔗 서비스 주소: [https://pofolo.site/](https://pofolo.site/)  
-<sub><span style="color:red">※ 현재는 서비스 운영이 중단되었습니다.</span></sub>
+![status](https://img.shields.io/badge/Status-서비스_중단-gray)
 
 ---
 
@@ -50,6 +50,7 @@
 <p>
   <img src="https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white"/>
   <img src="https://img.shields.io/badge/Django-092E20?style=flat&logo=django&logoColor=white"/>
+  <img src="https://img.shields.io/badge/DRF-ff1709?style=flat&logo=django&logoColor=white"/>
   <img src="https://img.shields.io/badge/SQLite-003B57?style=flat&logo=sqlite&logoColor=white"/>
   <img src="https://img.shields.io/badge/AWS EC2-%23FF9900?style=flat&logo=amazon-ec2&logoColor=white"/>
   <img src="https://img.shields.io/badge/AWS S3-%2398BF64?style=flat&logo=amazon-s3&logoColor=white"/>
