@@ -24,7 +24,7 @@
   - Notion 기반 API 명세서 작성
 
 - **Django 기반 백엔드 전반 구현 (DRF 기반 REST API)**
-  - 사용자 인증 / 프로젝트 CRUD / 댓글 API 구현
+  - 사용자 인증 / 프로젝트 댓글 및 좋아요 API 구현
   - JWT 기반 인증 시스템 구성
 
 - **Kakao OAuth2.0 로그인 설계 및 구현**
